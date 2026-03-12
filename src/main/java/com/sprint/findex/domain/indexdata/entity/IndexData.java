@@ -1,4 +1,4 @@
-package com.sprint.findex.domain.indexdata;
+package com.sprint.findex.domain.indexdata.entity;
 
 import com.sprint.findex.common.entity.BaseEntity;
 import com.sprint.findex.common.type.SourceType;
