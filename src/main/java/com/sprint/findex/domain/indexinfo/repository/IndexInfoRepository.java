@@ -21,8 +21,8 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
    */
   @Query("""
         SELECT i FROM IndexInfo i
-        WHERE (:indexClassificationName IS NULL OR i.indexClassificationName LIKE %:indexClassificationName%)
-          AND (:indexName IS NULL OR i.indexName LIKE %:indexName%)
+        WHERE (:indexClassificationName IS NULL OR i.indexClassificationName LIKE CONCAT('%', :indexClassificationName, '%'))
+          AND (:indexName IS NULL OR i.indexName LIKE CONCAT('%', :indexName, '%'))
           AND (:favorite IS NULL OR i.favorite = :favorite)
           AND (:lastId IS NULL OR i.id < :lastId)
         ORDER BY i.id DESC
