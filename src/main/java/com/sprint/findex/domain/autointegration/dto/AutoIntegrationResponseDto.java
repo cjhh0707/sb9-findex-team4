@@ -3,7 +3,7 @@ package com.sprint.findex.domain.autointegration.dto;
 import java.time.LocalDateTime;
 
 // 응답용 DTO
-public record AutoSyncSettingResponseDto (
+public record AutoIntegrationResponseDto (
 
   Long id, // 엔티티 PK
 

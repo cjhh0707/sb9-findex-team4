@@ -1,14 +1,13 @@
 package com.sprint.findex.domain.autointegration.repository;
 
 import com.sprint.findex.domain.autointegration.entity.AutoIntegration;
-import com.sprint.findex.domain.autointegration.entity.AutoSyncSetting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface AutoSyncSettingRepository extends JpaRepository<AutoIntegration, Long> {
+public interface AutoIntegrationRepository extends JpaRepository<AutoIntegration, Long> {
 
   // indexId 조회용
   Optional<AutoIntegration> findByIndexInfoId(Long indexInfoId);

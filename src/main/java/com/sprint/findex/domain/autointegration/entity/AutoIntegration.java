@@ -3,6 +3,7 @@ package com.sprint.findex.domain.autointegration.entity;
 import com.sprint.findex.common.entity.BaseEntity;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -25,4 +26,16 @@ public class AutoIntegration extends BaseEntity {
   @Builder.Default
   @Column(nullable = false)
   private Boolean enabled = false;
+
+  public void changeEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  @Column(nullable = true)
+  private LocalDateTime lastSyncAt;
+
+
+  public void updateLastIntegrationAt(LocalDateTime lastSyncAt) {
+    this.lastSyncAt = lastSyncAt;
+  }
 }
