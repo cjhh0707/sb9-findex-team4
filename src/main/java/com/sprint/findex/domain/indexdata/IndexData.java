@@ -18,7 +18,7 @@ public class IndexData extends BaseEntity {
 
   private LocalDate baseDate;
 
-  @Enumerated(EnumType.STRING) // spring 설정시 db에 글자관리가 편해짐
+  @Enumerated(EnumType.STRING) // db에 글자관리가 편해짐
   private SourceType sourceType;
 
   private BigDecimal openingPrice;
