@@ -5,10 +5,16 @@ import java.util.UUID;
 
 // 응답용 DTO
 public record AutoSyncSettingResponseDto (
-  UUID uuid,
-  String indexId,
-  boolean enabed,
-  LocalDateTime lastSyncDate,
-  LocalDateTime createdAt,
-  LocalDateTime updateAt
+
+  Long id, // 엔티티 PK
+
+  Long indexInfoId, // 연동 대상 식별자
+
+  boolean enabled, // 활성화 여부
+
+  LocalDateTime lastSyncDate, // 마지막 연동 시간
+
+  LocalDateTime createdAt, // 생성 시간
+
+  LocalDateTime updatedAt // 마지막 수정 시간
 ) {}

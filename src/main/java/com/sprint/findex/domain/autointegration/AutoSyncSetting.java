@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "auto_sync_setting", uniqueConstraints = {
@@ -19,14 +18,11 @@ import java.util.UUID;
 @Builder
 public class AutoSyncSetting extends BaseEntity { // 생성 시간 업데이트 시간 상속 (자동 관리)
 
-  @Id
-  @GeneratedValue
-  private UUID id;
-
   @Column(name = "index_id", nullable = false, unique = true)
-  private String indexId;
+  private Long indexInfoId;
 
 //  기본값 false
+  @Builder.Default
   @Column(nullable = false)
   private boolean enabled = false;
 

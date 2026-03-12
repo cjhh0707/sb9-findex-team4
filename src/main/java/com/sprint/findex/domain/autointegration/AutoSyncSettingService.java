@@ -16,9 +16,9 @@ public class AutoSyncSettingService {
 
 
 //    새로운 자동 연동 설정 생성
-  public AutoSyncSetting createAutoSyncSetting(String indexId) {
+  public AutoSyncSetting createAutoSyncSetting(Long indexInfoId) {
     AutoSyncSetting setting = AutoSyncSetting.builder()
-        .indexId(indexId)
+        .indexInfoId(indexInfoId)
         .enabled(false) // 기본값 비활성화
         .build();
 
@@ -27,13 +27,13 @@ public class AutoSyncSettingService {
 
 
 //   ID로 조회
-  public Optional<AutoSyncSetting> getAutoSyncSetting(UUID id) {
+  public Optional<AutoSyncSetting> getAutoSyncSetting(Long id) {
     return autoSyncSettingRepository.findById(id);
   }
 
-
-  public Optional<AutoSyncSetting> getAutoSyncSettingByIndexId(String indexId) {
-    return autoSyncSettingRepository.findByIndexId(indexId);
+//   대상 식별자 조회
+  public Optional<AutoSyncSetting> getAutoSyncSettingByIndexId(Long indexInfoId) {
+    return autoSyncSettingRepository.findByIndexInfoId(indexInfoId);
   }
 
 
@@ -44,7 +44,7 @@ public class AutoSyncSettingService {
 
 
 //   활성화 상태 업데이트
-  public AutoSyncSetting updateEnabled(UUID id, boolean enabled) {
+  public AutoSyncSetting updateEnabled(Long id, boolean enabled) {
     AutoSyncSetting setting = autoSyncSettingRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("AutoSyncSetting not found for id: " + id));
 
@@ -54,7 +54,7 @@ public class AutoSyncSettingService {
 
 
 //   마지막 동기화 날짜 업데이트
-  public AutoSyncSetting updateLastSyncDate(UUID id, java.time.LocalDateTime lastSyncDate) {
+  public AutoSyncSetting updateLastSyncDate(Long id, java.time.LocalDateTime lastSyncDate) {
     AutoSyncSetting setting = autoSyncSettingRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("AutoSyncSetting not found for id: " + id));
 

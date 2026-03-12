@@ -1,6 +1,8 @@
 package com.sprint.findex.domain.autointegration;
 
-// 생성용 DTO
+// 자동 연동 설정 생성용 DTO
 public record AutoSyncSettingCreateDto(
-    String indexId
+
+    Long indexInfoId // 연동 대상 식별자
+
 ) {}
