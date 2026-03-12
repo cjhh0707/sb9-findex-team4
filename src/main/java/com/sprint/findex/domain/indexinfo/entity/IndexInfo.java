@@ -41,7 +41,7 @@ public class IndexInfo extends BaseEntity {
   private Boolean favorite; //즐겨찾기 여부
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(name = "source_type", nullable = false)
   private SourceType sourceType; //소스타입
 
   public void updateFavorite(Boolean favorite) {
