@@ -18,15 +18,11 @@ import lombok.*;
 @Builder
 public class AutoIntegration extends BaseEntity {
 
-  /** 자동 연동 대상 지수 */
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "index_info_id", nullable = false)
   private IndexInfo indexInfo;
 
-  /** 활성화 여부 */
   @Builder.Default
   @Column(nullable = false)
   private Boolean enabled = false;
 }
-
-
