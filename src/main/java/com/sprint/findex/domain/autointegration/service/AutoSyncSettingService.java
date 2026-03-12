@@ -1,6 +1,7 @@
 package com.sprint.findex.domain.autointegration.service;
 
 
+import com.sprint.findex.domain.autointegration.entity.AutoIntegration;
 import com.sprint.findex.domain.autointegration.entity.AutoSyncSetting;
 import com.sprint.findex.domain.autointegration.repository.AutoSyncSettingRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,8 @@ public class AutoSyncSettingService {
 
 
 //    새로운 자동 연동 설정 생성
-  public AutoSyncSetting createAutoSyncSetting(Long indexInfoId) {
-    AutoSyncSetting setting = AutoSyncSetting.builder()
+  public AutoIntegration createAutoSyncSetting(Long indexInfoId) {
+    AutoIntegration setting = AutoIntegration.builder()
         .indexInfoId(indexInfoId)
         .enabled(false) // 기본값 비활성화
         .build();
@@ -28,26 +29,26 @@ public class AutoSyncSettingService {
 
 
 //   ID로 조회
-  public Optional<AutoSyncSetting> getAutoSyncSetting(Long id) {
+  public Optional<AutoIntegration> getAutoSyncSetting(Long id) {
     return autoSyncSettingRepository.findById(id);
   }
 
 //   대상 식별자 조회
-  public Optional<AutoSyncSetting> getAutoSyncSettingByIndexId(Long indexInfoId) {
+  public Optional<AutoIntegration> getAutoSyncSettingByIndexId(Long indexInfoId) {
     return autoSyncSettingRepository.findByIndexInfoId(indexInfoId);
   }
 
 
 //    활성화 상태 기준 전체 조회
-  public List<AutoSyncSetting> getAllByEnabled(boolean enabled) {
+  public List<AutoIntegration> getAllByEnabled(boolean enabled) {
     return autoSyncSettingRepository.findAllByEnabled(enabled);
   }
 
 
 //   활성화 상태 업데이트
-  public AutoSyncSetting updateEnabled(Long id, boolean enabled) {
-    AutoSyncSetting setting = autoSyncSettingRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("AutoSyncSetting not found for id: " + id));
+  public AutoIntegration updateEnabled(Long id, boolean enabled) {
+    AutoIntegration setting = autoSyncSettingRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
 
     setting.setEnabled(enabled);
     return autoSyncSettingRepository.save(setting);
@@ -55,8 +56,8 @@ public class AutoSyncSettingService {
 
 
 //   마지막 동기화 날짜 업데이트
-  public AutoSyncSetting updateLastSyncDate(Long id, java.time.LocalDateTime lastSyncDate) {
-    AutoSyncSetting setting = autoSyncSettingRepository.findById(id)
+  public AutoIntegration updateLastSyncDate(Long id, java.time.LocalDateTime lastSyncDate) {
+    AutoIntegration setting = autoSyncSettingRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("AutoSyncSetting not found for id: " + id));
 
     setting.setLastSyncDate(lastSyncDate);
