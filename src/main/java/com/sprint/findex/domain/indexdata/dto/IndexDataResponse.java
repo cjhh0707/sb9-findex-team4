@@ -22,4 +22,7 @@ public class IndexDataResponse {
   private final BigDecimal lowPrice;     // 저가
   private final BigDecimal versus;       // 대비
   private final BigDecimal fluctuationRate; // 등락률
+  private final Long tradingQuantity; // 거래량
+  private final Long tradingPrice; // 거래 대금
+  private final Long marketCapitalization; // 상장 시가 총액
 }

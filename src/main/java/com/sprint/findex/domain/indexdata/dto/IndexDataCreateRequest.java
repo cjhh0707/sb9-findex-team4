@@ -17,5 +17,8 @@ public class IndexDataCreateRequest {
   private BigDecimal lowPrice; // 저가
   private BigDecimal versus; // 대비
   private BigDecimal fluctuationRate; // 등략률
+  private Long tradingQuantity; // 거래량
+  private Long tradingPrice; // 거래 대금
+  private Long marketCapitalization; // 상장 시가 총액
 
 }
