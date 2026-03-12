@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class IndexDataCreateRequest {
+  private Long indexInfoId;      // 지수 정보 ID(매우 중요)
   private LocalDate baseDate; // 날짜
   private SourceType sourceType; //소스 타입
   private BigDecimal openingPrice; // 시가
