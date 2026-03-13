@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class IndexDataService {
 
   private final IndexDataRepository indexDataRepository;
-  private final IndexInfoRepository indexInfoRepository; // 임시로 만든 레포지토리 지수정보 창고
+  private final IndexInfoRepository indexInfoRepository; // 임시로 만든 레포지토리
   private final IndexDataMapper indexDataMapper;
 
   /**

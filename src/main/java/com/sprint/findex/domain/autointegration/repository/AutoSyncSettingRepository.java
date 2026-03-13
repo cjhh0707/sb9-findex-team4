@@ -1,6 +1,6 @@
 package com.sprint.findex.domain.autointegration.repository;
 
-import com.sprint.findex.domain.autointegration.entity.AutoSyncSetting;
+import com.sprint.findex.domain.autointegration.AutoSyncSetting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

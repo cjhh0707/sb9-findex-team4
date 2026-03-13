@@ -26,6 +26,10 @@ public class IndexDataMapper {
         .tradingQuantity(request.getTradingQuantity()) // 거래량을 옮겨 담음
         .tradingPrice(request.getTradingPrice())       // 거래 대금을 옮겨 담음
         .marketCapitalization(request.getMarketCapitalization()) // 시가 총액을 옮겨 담음
+        .yearRecordHighPrice(request.getYearRecordHighPrice()) // 연중 최고가
+        .yearRecordHighDate(request.getYearRecordHighDate())   // 연중 최고가 날짜
+        .yearRecordLowPrice(request.getYearRecordLowPrice())   // 연중 최저가
+        .yearRecordLowDate(request.getYearRecordLowDate())     // 연중 최저가 날짜
         .build();
   }
 
@@ -46,6 +50,10 @@ public class IndexDataMapper {
         .tradingQuantity(entity.getTradingQuantity()) // 저장된 거래량을 적음
         .tradingPrice(entity.getTradingPrice())       // 저장된 거래 대금을 적음
         .marketCapitalization(entity.getMarketCapitalization()) // 저장된 시가 총액을 적음
+        .yearRecordHighPrice(entity.getYearRecordHighPrice()) // 저장된 연중 최고가
+        .yearRecordHighDate(entity.getYearRecordHighDate())   // 저장된 연중 최고가 날짜
+        .yearRecordLowPrice(entity.getYearRecordLowPrice())   // 저장된 연중 최저가
+        .yearRecordLowDate(entity.getYearRecordLowDate())     // 저장된 연중 최저가 날짜
         .build();
   }
 }

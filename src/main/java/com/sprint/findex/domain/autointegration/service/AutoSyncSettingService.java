@@ -1,7 +1,8 @@
 package com.sprint.findex.domain.autointegration.service;
 
 
-import com.sprint.findex.domain.autointegration.entity.AutoSyncSetting;
+
+import com.sprint.findex.domain.autointegration.AutoSyncSetting;
 import com.sprint.findex.domain.autointegration.repository.AutoSyncSettingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
