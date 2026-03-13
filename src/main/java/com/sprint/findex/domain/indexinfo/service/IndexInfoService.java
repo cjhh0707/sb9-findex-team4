@@ -5,6 +5,7 @@ import com.sprint.findex.domain.indexinfo.dto.IndexInfoResponse;
 import com.sprint.findex.domain.indexinfo.dto.IndexInfoSearchCondition;
 import com.sprint.findex.domain.indexinfo.dto.IndexInfoUpdateRequest;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
+import com.sprint.findex.domain.indexinfo.mapper.IndexInfoMapper;
 import com.sprint.findex.domain.indexinfo.repository.IndexInfoRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class IndexInfoService {
 
   private final IndexInfoRepository indexInfoRepository;
+  private final IndexInfoMapper indexInfoMapper;
 
   @Transactional
   public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request){
@@ -27,23 +29,14 @@ public class IndexInfoService {
       throw new IllegalArgumentException("이미 등록된 지수 분류명과 지수명 조합입니다.");
     }
 
-    //DTO -> Entity
-    IndexInfo indexInfo = IndexInfo.builder()
-        .indexClassificationName(request.indexClassificationName())
-        .indexName(request.indexName())
-        .employedItemsCount(request.employedItemsCount())
-        .basePointInTime(request.basePointInTime())
-        .baseIndex(request.baseIndex())
-        .sourceType(request.sourceType())
-        .favorite(request.favorite())
-        .build();
+    IndexInfo indexInfo = indexInfoMapper.toEntity(request);
 
     IndexInfo savedIndexInfo = indexInfoRepository.save(indexInfo);
 
     // 요구사항의 "자동 연동 설정 정보도 같이 초기화되어야 합니다." 처리를 위해
     // 추후 AutoIntegrationRepository를 주입받아 비활성화 상태로 저장하는 로직 추가 필요
 
-    return IndexInfoResponse.from(savedIndexInfo);
+    return indexInfoMapper.toResponse(savedIndexInfo);
   }
 
   @Transactional
@@ -61,8 +54,7 @@ public class IndexInfoService {
     //즐겨찾기 상태 수정
     indexInfo.updateFavorite(request.favorite());
 
-    //수정된 결과를 DTO로 변환하여 반환
-    return IndexInfoResponse.from(indexInfo);
+    return indexInfoMapper.toResponse(indexInfo);
   }
 
   @Transactional
@@ -92,7 +84,7 @@ public class IndexInfoService {
     );
 
     return indexInfos.stream()
-        .map(IndexInfoResponse::from)
+        .map(indexInfoMapper::toResponse)
         .toList();
   }
 
