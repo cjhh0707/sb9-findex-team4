@@ -57,4 +57,6 @@ public class IndexInfo extends BaseEntity {
     this.basePointInTime = basePointInTime;
     this.baseIndex = baseIndex;
   }
+
+
 }
