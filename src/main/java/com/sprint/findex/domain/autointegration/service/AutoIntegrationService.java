@@ -5,6 +5,7 @@ import com.sprint.findex.domain.autointegration.dto.AutoIntegrationDto;
 import com.sprint.findex.domain.autointegration.entity.AutoIntegration;
 import com.sprint.findex.domain.autointegration.mapper.AutoIntergrationMapper;
 import com.sprint.findex.domain.autointegration.repository.AutoIntegrationRepository;
+import com.sprint.findex.domain.autointegration.repository.IndexInfoRepository;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,13 @@ public class AutoIntegrationService {
 
   private final AutoIntegrationRepository autoIntegrationRepository;
   private final AutoIntergrationMapper autoIntergrationMapper;
+  private final IndexInfoRepository indexInfoRepository;
 
 
 //    새로운 자동 연동 설정 생성
-  public AutoIntegrationDto createAutoIntegration (IndexInfo indexInfo) {
+  public AutoIntegrationDto createAutoIntegration (Long indexInfoId) {
+    IndexInfo indexInfo = indexInfoRepository.findById(indexInfoId)
+        .orElseThrow(() -> new IllegalArgumentException("IndexInfo not found"));
     AutoIntegration setting = AutoIntegration.builder()
         .indexInfo(indexInfo)
         .enabled(false) // 기본값 비활성화
