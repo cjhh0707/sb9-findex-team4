@@ -20,6 +20,11 @@ spring:
       hibernate:
         format_sql: true
 
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
   task:
     scheduling:
       enabled: true
