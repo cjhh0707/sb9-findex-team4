@@ -21,5 +21,9 @@ public class IndexDataCreateRequest {
   private Long tradingQuantity; // 거래량
   private Long tradingPrice; // 거래 대금
   private Long marketCapitalization; // 상장 시가 총액
+  private BigDecimal yearRecordHighPrice; // 연중 최고치
+  private String yearRecordHighDate;      // 연중 최고치 기록 일자
+  private BigDecimal yearRecordLowPrice;  // 연중 최저치
+  private String yearRecordLowDate;       // 연중 최저치 기록 일자
 
 }

@@ -21,7 +21,7 @@ import lombok.*;
 @Builder
 public class IndexData extends BaseEntity {
 
-  /** IndexInfo */
+  /** 지수 정보 (부모) */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "index_info_id", nullable = false)
   private IndexInfo indexInfo;
@@ -70,4 +70,20 @@ public class IndexData extends BaseEntity {
   /** 상장 시가 총액 */
   @Column(name = "market_capitalization")
   private Long marketCapitalization;
+
+  /** 연중 최고치 */
+  @Column(name = "year_record_high_price")
+  private BigDecimal yearRecordHighPrice;
+
+  /** 연중 최고치 기록 일자 */
+  @Column(name = "year_record_high_date")
+  private String yearRecordHighDate;
+
+  /** 연중 최저치 */
+  @Column(name = "year_record_low_price")
+  private BigDecimal yearRecordLowPrice;
+
+  /** 연중 최저치 기록 일자 */
+  @Column(name = "year_record_low_date")
+  private String yearRecordLowDate;
 }
