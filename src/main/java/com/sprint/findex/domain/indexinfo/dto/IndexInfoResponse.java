@@ -15,16 +15,4 @@ public record IndexInfoResponse(
     SourceType sourceType,
     Boolean favorite
 ) {
-    public static IndexInfoResponse from(IndexInfo indexInfo){
-      return new IndexInfoResponse(
-          indexInfo.getId(),
-          indexInfo.getIndexClassificationName(),
-          indexInfo.getIndexName(),
-          indexInfo.getEmployedItemsCount(),
-          indexInfo.getBasePointInTime(),
-          indexInfo.getBaseIndex(),
-          indexInfo.getSourceType(),
-          indexInfo.getFavorite()
-      );
-    }
 }
