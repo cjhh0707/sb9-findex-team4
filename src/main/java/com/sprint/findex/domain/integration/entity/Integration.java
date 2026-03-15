@@ -41,4 +41,8 @@ public class Integration extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "result", length = 20, nullable = false)
     private JobResult result;
+
+    public void updateResult(JobResult result) {
+        this.result = result;
+    }
 }
