@@ -75,4 +75,24 @@ public class IndexDataController {
     indexDataService.delete(id);
     return ResponseEntity.ok().build();
   }
+
+  /**
+   * [GET] 지수 데이터 CSV Export
+   * 기획서 사양: 지수 데이터 목록 조회와 같은 규칙으로 필터링 및 정렬하여 CSV 파일로 추출 (페이징 제외)
+   */
+  @GetMapping("/export")
+  public ResponseEntity<byte[]> exportCsv(IndexDataSearchCondition condition) {
+    // 서비스에서 CSV 형식으로 변환된 문자열 데이터를 가져옵니다.
+    String csvData = indexDataService.exportToCsv(condition);
+
+    // 파일명을 "index_data_현재날짜.csv"로 설정합니다.
+    String fileName = "index_data_" + java.time.LocalDate.now() + ".csv";
+
+    // 브라우저가 파일로 인식하여 즉시 다운로드하도록 헤더 정보를 설정하여 응답합니다.
+    return ResponseEntity.ok()
+        .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=" + fileName)
+        .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
+        .body(csvData.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
 }

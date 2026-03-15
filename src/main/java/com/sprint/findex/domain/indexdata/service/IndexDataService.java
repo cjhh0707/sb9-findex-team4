@@ -103,4 +103,33 @@ public class IndexDataService {
 
     indexDataRepository.delete(indexData);
   }
+
+  /**
+   * [Export] 지수 데이터 CSV 파일 생성
+   * 기획서 사양: 목록 조회와 동일한 필터링 규칙 적용, 페이지네이션 제외
+   */
+  public String exportToCsv(IndexDataSearchCondition condition) {
+    // 레포지토리에 새로 만든 메서드로 전체 데이터 조회 (lastId와 Pageable 제외)
+    List<IndexData> dataList = indexDataRepository.findAllForExport(
+        condition.indexInfoId(),
+        condition.startDate(),
+        condition.endDate()
+    );
+
+    // CSV 헤더 작성 (기획서에 명시된 주요 속성들)
+    StringBuilder csv = new StringBuilder();
+    csv.append("기준일자,지수명,종가,대비,등락률,거래량,거래대금\n");
+
+    for (IndexData data : dataList) {
+      csv.append(data.getBaseDate()).append(",")
+          .append(data.getIndexInfo().getIndexName()).append(",")
+          .append(data.getClosingPrice()).append(",")        // 종가
+          .append(data.getVersus()).append(",")             // 대비
+          .append(data.getFluctuationRate()).append(",")     // 등락률
+          .append(data.getTradingQuantity()).append(",")     // 거래량
+          .append(data.getTradingPrice()).append("\n");      // 거래대금
+    }
+
+    return csv.toString();
+  }
 }
