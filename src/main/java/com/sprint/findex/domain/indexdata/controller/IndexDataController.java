@@ -1,5 +1,6 @@
 package com.sprint.findex.domain.indexdata.controller;
 
+import com.sprint.findex.domain.indexdata.dto.CursorPageResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataCreateRequest;
 import com.sprint.findex.domain.indexdata.dto.IndexDataListResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataResponse;
@@ -33,15 +34,18 @@ public class IndexDataController {
 
   /**
    * [GET] 지수 데이터 목록 조회 및 검색
-   * 기획서 사양: 지수(완전 일치), 날짜(범위), No-offset 페이징(lastId 활용)
+   * 팀장님 피드백: API 명세서에 맞게 idAfter 파라미터와 CursorPageResponse 반환 타입 적용
    */
   @GetMapping
-  public ResponseEntity<Slice<IndexDataListResponse>> search(
+  public ResponseEntity<CursorPageResponse<IndexDataListResponse>> search(
       IndexDataSearchCondition condition,
-      @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+      @RequestParam(required = false) Long idAfter, // "lastId" 대신 명세서 이름인 "idAfter" 사용
+      @RequestParam(defaultValue = "10") int size) { // 페이지 번호 대신 사이즈만 받음
 
-    Slice<IndexDataListResponse> responses = indexDataService.search(condition, pageable);
-    return ResponseEntity.ok(responses);
+    // idAfter와 size를 넘겨줌
+    CursorPageResponse<IndexDataListResponse> response = indexDataService.search(condition, idAfter, size);
+
+    return ResponseEntity.ok(response);
   }
 
   /**
