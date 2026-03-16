@@ -1,5 +1,6 @@
 package com.sprint.findex.domain.indexdata.mapper;
 
+import com.sprint.findex.common.type.SourceType;
 import com.sprint.findex.domain.indexdata.dto.IndexDataCreateRequest;
 import com.sprint.findex.domain.indexdata.dto.IndexDataResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataListResponse;
@@ -19,8 +20,8 @@ public class IndexDataMapper {
     return IndexData.builder()
         .indexInfo(indexInfo)
         .baseDate(request.baseDate()) // .getBaseDate() -> .baseDate()
-        .sourceType(request.sourceType())
-        .openingPrice(request.openingPrice())
+        .sourceType(SourceType.USER) // 직접 등록 시 기본값 USER 설정
+        .marketPrice(request.marketPrice())
         .closingPrice(request.closingPrice())
         .highPrice(request.highPrice())
         .lowPrice(request.lowPrice())
@@ -28,7 +29,7 @@ public class IndexDataMapper {
         .fluctuationRate(request.fluctuationRate())
         .tradingQuantity(request.tradingQuantity())
         .tradingPrice(request.tradingPrice())
-        .marketCapitalization(request.marketCapitalization())
+        .marketTotalAmount(request.marketTotalAmount())
         .yearRecordHighPrice(request.yearRecordHighPrice())
         .yearRecordHighDate(request.yearRecordHighDate())
         .yearRecordLowPrice(request.yearRecordLowPrice())
@@ -42,23 +43,20 @@ public class IndexDataMapper {
    */
   public IndexDataResponse toResponse(IndexData entity) {
     return IndexDataResponse.builder()
-        .id(entity.getId())
-        .baseDate(entity.getBaseDate())
-        .sourceType(entity.getSourceType())
-        .openingPrice(entity.getOpeningPrice())
-        .closingPrice(entity.getClosingPrice())
-        .highPrice(entity.getHighPrice())
-        .lowPrice(entity.getLowPrice())
-        .versus(entity.getVersus())
-        .fluctuationRate(entity.getFluctuationRate())
-        .tradingQuantity(entity.getTradingQuantity())
-        .tradingPrice(entity.getTradingPrice())
-        .marketCapitalization(entity.getMarketCapitalization())
-        .yearRecordHighPrice(entity.getYearRecordHighPrice())
-        .yearRecordHighDate(entity.getYearRecordHighDate())
-        .yearRecordLowPrice(entity.getYearRecordLowPrice())
-        .yearRecordLowDate(entity.getYearRecordLowDate())
-        .build();
+            .id(entity.getId())
+            .indexInfoId(entity.getIndexInfo().getId())
+            .baseDate(entity.getBaseDate())
+            .sourceType(entity.getSourceType())
+            .marketPrice(entity.getMarketPrice())
+            .closingPrice(entity.getClosingPrice())
+            .highPrice(entity.getHighPrice())
+            .lowPrice(entity.getLowPrice())
+            .versus(entity.getVersus())
+            .fluctuationRate(entity.getFluctuationRate())
+            .tradingQuantity(entity.getTradingQuantity())
+            .tradingPrice(entity.getTradingPrice())
+            .marketTotalAmount(entity.getMarketTotalAmount())
+            .build();
   }
 
   /**
@@ -79,20 +77,16 @@ public class IndexDataMapper {
    */
   public void updateEntityFromDto(IndexDataUpdateRequest request, IndexData entity) {
     entity.update(
-        request.sourceType(),
-        request.openingPrice(),
-        request.closingPrice(),
-        request.highPrice(),
-        request.lowPrice(),
-        request.versus(),
-        request.fluctuationRate(),
-        request.tradingQuantity(),
-        request.tradingPrice(),
-        request.marketCapitalization(),
-        request.yearRecordHighPrice(),
-        request.yearRecordHighDate(),
-        request.yearRecordLowPrice(),
-        request.yearRecordLowDate()
+            request.sourceType() != null ? request.sourceType() : entity.getSourceType(),
+            request.marketPrice(),
+            request.closingPrice(),
+            request.highPrice(),
+            request.lowPrice(),
+            request.versus(),
+            request.fluctuationRate(),
+            request.tradingQuantity(),
+            request.tradingPrice(),
+            request.marketTotalAmount()
     );
   }
 }

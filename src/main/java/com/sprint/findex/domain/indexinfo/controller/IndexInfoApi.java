@@ -1,10 +1,8 @@
 package com.sprint.findex.domain.indexinfo.controller;
 
 
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoCreateRequest;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoResponse;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoSearchCondition;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoUpdateRequest;
+import com.sprint.findex.common.dto.CursorPageResponse;
+import com.sprint.findex.domain.indexinfo.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,6 +27,14 @@ public interface IndexInfoApi {
 
     @Operation(summary = "지수 정보 목록 조회", description = "조건에 맞는 지수 정보 목록을 페이징하여 조회합니다.")
     @GetMapping
-    ResponseEntity<List<IndexInfoResponse>> getIndexInfoList(@ModelAttribute IndexInfoSearchCondition condition);
+    ResponseEntity<CursorPageResponse<IndexInfoResponse>> getIndexInfoList(
+            @ModelAttribute IndexInfoSearchCondition condition,
+            @RequestParam(required = false) Long idAfter,
+            @RequestParam(defaultValue = "10") int size
+    );
+
+    @Operation(summary = "지수 정보 요약 목록 조회", description = "지수 ID, 분류, 이름만 포함한 전체 지수 목록을 조회합니다.")
+    @GetMapping("/summaries")
+    ResponseEntity<List<IndexInfoSummaryDto>> getIndexInfoSummaries();
 
 }

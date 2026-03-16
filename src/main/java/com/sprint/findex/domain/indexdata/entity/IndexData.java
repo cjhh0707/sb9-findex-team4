@@ -37,7 +37,7 @@ public class IndexData extends BaseEntity {
 
   /** 시가 */
   @Column(name = "opening_price")
-  private BigDecimal openingPrice;
+  private BigDecimal marketPrice;
 
   /** 종가 */
   @Column(name = "closing_price")
@@ -69,7 +69,7 @@ public class IndexData extends BaseEntity {
 
   /** 상장 시가 총액 */
   @Column(name = "market_capitalization")
-  private Long marketCapitalization;
+  private Long marketTotalAmount;
 
   /** 연중 최고치 */
   @Column(name = "year_record_high_price")
@@ -90,14 +90,12 @@ public class IndexData extends BaseEntity {
   /**
    * [추가] 기획서에 따라 지수와 날짜를 제외한 모든 속성을 수정합니다.
    */
-  public void update(SourceType sourceType, BigDecimal openingPrice, BigDecimal closingPrice,
-      BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
-      BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
-      Long marketCapitalization, BigDecimal yearRecordHighPrice,
-      String yearRecordHighDate, BigDecimal yearRecordLowPrice,
-      String yearRecordLowDate) {
+  public void update(SourceType sourceType, BigDecimal marketPrice, BigDecimal closingPrice,
+                     BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
+                     BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
+                     Long marketTotalAmount) {
     this.sourceType = sourceType;
-    this.openingPrice = openingPrice;
+    this.marketPrice = marketPrice;
     this.closingPrice = closingPrice;
     this.highPrice = highPrice;
     this.lowPrice = lowPrice;
@@ -105,10 +103,6 @@ public class IndexData extends BaseEntity {
     this.fluctuationRate = fluctuationRate;
     this.tradingQuantity = tradingQuantity;
     this.tradingPrice = tradingPrice;
-    this.marketCapitalization = marketCapitalization;
-    this.yearRecordHighPrice = yearRecordHighPrice;
-    this.yearRecordHighDate = yearRecordHighDate;
-    this.yearRecordLowPrice = yearRecordLowPrice;
-    this.yearRecordLowDate = yearRecordLowDate;
+    this.marketTotalAmount = marketTotalAmount;
   }
 }

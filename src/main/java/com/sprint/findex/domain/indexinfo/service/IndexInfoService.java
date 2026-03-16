@@ -1,9 +1,8 @@
 package com.sprint.findex.domain.indexinfo.service;
 
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoCreateRequest;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoResponse;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoSearchCondition;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoUpdateRequest;
+import com.sprint.findex.common.dto.CursorPageResponse;
+import com.sprint.findex.domain.autointegration.service.AutoIntegrationService;
+import com.sprint.findex.domain.indexinfo.dto.*;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import com.sprint.findex.domain.indexinfo.repository.IndexInfoRepository;
 import java.util.List;
@@ -18,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class IndexInfoService {
 
   private final IndexInfoRepository indexInfoRepository;
+  private final AutoIntegrationService autoIntegrationService;
 
   @Transactional
   public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request){
@@ -42,6 +42,7 @@ public class IndexInfoService {
 
     // 요구사항의 "자동 연동 설정 정보도 같이 초기화되어야 합니다." 처리를 위해
     // 추후 AutoIntegrationRepository를 주입받아 비활성화 상태로 저장하는 로직 추가 필요
+    autoIntegrationService.createAutoIntegration(savedIndexInfo.getId());
 
     return IndexInfoResponse.from(savedIndexInfo);
   }
@@ -74,26 +75,52 @@ public class IndexInfoService {
     indexInfoRepository.delete(indexInfo);
   }
 
+  // 지수 정보 목록 조회 (Cursor 기반 페이징 적용)
   @Transactional(readOnly = true)
-  public List<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition){
-    //클라이언트가 pageSize 안보냈을 경우를 대비해 기본값 10
-    int size = (condition.pageSize() != null) ? condition.pageSize() : 10;
+  public CursorPageResponse<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition, Long idAfter, int size) {
+    Pageable pageable = PageRequest.of(0, size + 1);
 
-    //첫번째 페이지(0)부터 size만큼 가져옴
-    Pageable pageable = PageRequest.of(0, size);
-
-    //레포지토리에 만들어둔 동적 검색 쿼리를 호출
     List<IndexInfo> indexInfos = indexInfoRepository.searchIndexInfos(
-        condition.indexClassificationName(),
-        condition.indexName(),
-        condition.favorite(),
-        condition.lastId(),
-        pageable
+            condition.indexClassificationName(),
+            condition.indexName(),
+            condition.favorite(),
+            idAfter,
+            pageable
     );
 
-    return indexInfos.stream()
-        .map(IndexInfoResponse::from)
-        .toList();
+    boolean hasNext = indexInfos.size() > size;
+
+    List<IndexInfoResponse> content = indexInfos.stream()
+            .limit(size)
+            .map(IndexInfoResponse::from)
+            .toList();
+
+    Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
+
+    // 공용 CursorPageResponse 규격에 맞춰 반환
+    return new CursorPageResponse<>(
+            content,      // 데이터 리스트
+            null,         // 문자열 커서 사용 안 함
+            nextIdAfter,  // 다음 조회를 위한 커서 ID
+            size,         // 요청한 페이지 크기
+            null,         // 전체 개수 (커서 페이징에선 생략)
+            hasNext       // 다음 페이지 존재 여부
+    );
+  }
+
+  /**
+   * [신규 추가] 지수 정보 요약 목록 조회
+   */
+  @Transactional(readOnly = true)
+  public List<IndexInfoSummaryDto> getIndexInfoSummaries() {
+    // 모든 지수 정보를 가져와 요약 DTO로 변환하여 반환
+    return indexInfoRepository.findAll().stream()
+            .map(info -> new IndexInfoSummaryDto(
+                    info.getId(),
+                    info.getIndexClassificationName(),
+                    info.getIndexName()
+            ))
+            .toList();
   }
 
 }
