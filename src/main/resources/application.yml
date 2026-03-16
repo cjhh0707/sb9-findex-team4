@@ -7,8 +7,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/findex
-    username: postgres
-    password: password
+    username: findex_user
+    password: 0506
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,7 +22,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath:schema.sql
 
   task:
@@ -36,9 +36,9 @@ external:
 batch:
   sync:
     info:
-      fixed-delay: P1D
+      fixed-delay: 86400000
     enabled-index-data:
-      fixed-delay: P1D
+      fixed-delay: 86400000
 
 logging:
   level:

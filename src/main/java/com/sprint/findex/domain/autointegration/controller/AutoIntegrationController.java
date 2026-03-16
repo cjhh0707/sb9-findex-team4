@@ -3,12 +3,10 @@ package com.sprint.findex.domain.autointegration.controller;
 import com.sprint.findex.domain.autointegration.dto.AutoIntegrationCreateDto;
 import com.sprint.findex.domain.autointegration.dto.AutoIntegrationDto;
 import com.sprint.findex.domain.autointegration.dto.AutoIntegrationUpdateDto;
+import com.sprint.findex.domain.autointegration.dto.CursorPageResponse;
 import com.sprint.findex.domain.autointegration.service.AutoIntegrationService;
-import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 // API 명세서 URI 루트 -> /api/auto-sync-configs/{id} 맞춰 진행
 @RestController
@@ -33,14 +31,31 @@ public class AutoIntegrationController {
   // Index ID로 조회
   @GetMapping("/by-index/{indexId}")
   public AutoIntegrationDto getByIndex(@PathVariable Long indexId) {
-    return autoIntegrationService.getAutoIntegrationByIndexId(indexId);
+    return autoIntegrationService.getAutoIntegration(indexId);
   }
 
-  // 활성화 상태 기준 전체 조회
-  @GetMapping("/enabled/{enabled}")
-  public List<AutoIntegrationDto> getAllByEnabled(@PathVariable boolean enabled) {
-    return autoIntegrationService.getAllByEnabled(enabled);
-  }
+//  활성화 상태 기준 전체 조회
+@GetMapping
+public CursorPageResponse<AutoIntegrationDto> getAutoSyncConfigs(
+    @RequestParam(required = false) Long indexInfoId,
+    @RequestParam(required = false) Boolean enabled,
+    @RequestParam(required = false) Long idAfter,
+    @RequestParam(required = false) String cursor,
+    @RequestParam(defaultValue = "indexName") String sortField,
+    @RequestParam(defaultValue = "asc") String sortDirection,
+    @RequestParam(defaultValue = "10") int size
+) {
+
+  return autoIntegrationService.getAutoSyncConfigs(
+      indexInfoId,
+      enabled,
+      idAfter,
+      cursor,
+      sortField,
+      sortDirection,
+      size
+  );
+}
 
   // 활성화 상태 업데이트
   @PatchMapping("/{id}")
