@@ -1,32 +1,29 @@
 package com.sprint.findex.domain.indexdata.dto;
 
 import com.sprint.findex.common.type.SourceType;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Getter
+/**
+ * 지수 데이터 상세 응답 DTO (Record 버전)
+ */
 @Builder
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class IndexDataResponse {
-  private final Long id;           // 데이터 고유 번호
-  private final LocalDate baseDate; // 날짜
-  private final SourceType sourceType; // 출처
-  private final BigDecimal openingPrice; // 시가
-  private final BigDecimal closingPrice; // 종가
-  private final BigDecimal highPrice;    // 고가
-  private final BigDecimal lowPrice;     // 저가
-  private final BigDecimal versus;       // 대비
-  private final BigDecimal fluctuationRate; // 등락률
-  private final Long tradingQuantity; // 거래량
-  private final Long tradingPrice; // 거래 대금
-  private final Long marketCapitalization; // 상장 시가 총액
-  private final BigDecimal yearRecordHighPrice; // 연중 최고치
-  private final String yearRecordHighDate;      // 연중 최고치 기록 일자
-  private final BigDecimal yearRecordLowPrice;  // 연중 최저치
-  private final String yearRecordLowDate;       // 연중 최저치 기록 일자
-}
+public record IndexDataResponse(
+        Long id,                        // 데이터 고유 번호
+        LocalDate baseDate,             // 날짜
+        SourceType sourceType,          // 출처
+        BigDecimal openingPrice,        // 시가
+        BigDecimal closingPrice,        // 종가
+        BigDecimal highPrice,           // 고가
+        BigDecimal lowPrice,            // 저가
+        BigDecimal versus,              // 대비
+        BigDecimal fluctuationRate,     // 등락률
+        Long tradingQuantity,           // 거래량
+        Long tradingPrice,              // 거래 대금
+        Long marketCapitalization,      // 상장 시가 총액
+        BigDecimal yearRecordHighPrice, // 연중 최고치
+        String yearRecordHighDate,      // 연중 최고치 기록 일자
+        BigDecimal yearRecordLowPrice,  // 연중 최저치
+        String yearRecordLowDate        // 연중 최저치 기록 일자
+) {}

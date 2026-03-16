@@ -9,12 +9,10 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface AutoIntergrationMapper {
 
-//  엔티티 -> DTO
-
+  //  엔티티 -> DTO
+  @Mapping(source = "indexInfo.id", target = "indexInfo")
+  @Mapping(source = "indexInfo.indexClassificationName", target = "indexClassification")
+  @Mapping(source = "indexInfo.indexName", target = "indexName")
   AutoIntegrationDto toDto(AutoIntegration entity);
-//  DTO -> 엔티티
-  @Mapping(target = "lastSyncAt", ignore = true)
-  AutoIntegration toEntity(AutoIntegrationDto dto);
-
 
 }
