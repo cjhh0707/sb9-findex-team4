@@ -9,9 +9,9 @@ import lombok.Builder;
  */
 @Builder
 public record IndexDataListResponse(
-        Long id,
-        LocalDate baseDate,         // 기준일자
-        BigDecimal closingPrice,    // 종가
-        BigDecimal versus,          // 대비
-        BigDecimal fluctuationRate  // 등락률
+    Long id,
+    LocalDate baseDate,         // 기준일자
+    BigDecimal closingPrice,    // 종가
+    BigDecimal versus,          // 대비
+    BigDecimal fluctuationRate  // 등락률
 ) {}

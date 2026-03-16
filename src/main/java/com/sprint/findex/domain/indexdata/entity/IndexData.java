@@ -91,11 +91,11 @@ public class IndexData extends BaseEntity {
    * [추가] 기획서에 따라 지수와 날짜를 제외한 모든 속성을 수정합니다.
    */
   public void update(SourceType sourceType, BigDecimal openingPrice, BigDecimal closingPrice,
-                     BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
-                     BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
-                     Long marketCapitalization, BigDecimal yearRecordHighPrice,
-                     String yearRecordHighDate, BigDecimal yearRecordLowPrice,
-                     String yearRecordLowDate) {
+      BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
+      BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
+      Long marketCapitalization, BigDecimal yearRecordHighPrice,
+      String yearRecordHighDate, BigDecimal yearRecordLowPrice,
+      String yearRecordLowDate) {
     this.sourceType = sourceType;
     this.openingPrice = openingPrice;
     this.closingPrice = closingPrice;
