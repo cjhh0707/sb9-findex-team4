@@ -10,8 +10,8 @@ import org.mapstruct.Mapping;
 public interface AutoIntergrationMapper {
 
   //  엔티티 -> DTO
-  @Mapping(source = "indexInfo.id", target = "indexInfo")
-  @Mapping(source = "indexInfo.indexClassificationName", target = "indexClassification")
+  @Mapping(source = "indexInfo.id", target = "indexInfoId")
+  @Mapping(source = "indexInfo.indexClassification", target = "indexClassification")
   @Mapping(source = "indexInfo.indexName", target = "indexName")
   AutoIntegrationDto toDto(AutoIntegration entity);
 

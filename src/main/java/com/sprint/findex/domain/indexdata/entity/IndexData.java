@@ -71,30 +71,11 @@ public class IndexData extends BaseEntity {
   @Column(name = "market_capitalization")
   private Long marketTotalAmount;
 
-  /** 연중 최고치 */
-  @Column(name = "year_record_high_price")
-  private BigDecimal yearRecordHighPrice;
-
-  /** 연중 최고치 기록 일자 */
-  @Column(name = "year_record_high_date")
-  private String yearRecordHighDate;
-
-  /** 연중 최저치 */
-  @Column(name = "year_record_low_price")
-  private BigDecimal yearRecordLowPrice;
-
-  /** 연중 최저치 기록 일자 */
-  @Column(name = "year_record_low_date")
-  private String yearRecordLowDate;
-
-  /**
-   * [추가] 기획서에 따라 지수와 날짜를 제외한 모든 속성을 수정합니다.
-   */
-  public void update(SourceType sourceType, BigDecimal marketPrice, BigDecimal closingPrice,
+  /** 수정 */
+  public void update(BigDecimal marketPrice, BigDecimal closingPrice,
                      BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
                      BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
                      Long marketTotalAmount) {
-    this.sourceType = sourceType;
     this.marketPrice = marketPrice;
     this.closingPrice = closingPrice;
     this.highPrice = highPrice;

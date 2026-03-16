@@ -13,41 +13,39 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/index-infos")
 @RequiredArgsConstructor
-public class IndexInfoController implements IndexInfoApi{
+public class IndexInfoController implements IndexInfoApi {
 
     private final IndexInfoService indexInfoService;
 
     @Override
-    public ResponseEntity<IndexInfoResponse> createIndexInfo(IndexInfoCreateRequest request){
-        IndexInfoResponse response = indexInfoService.createIndexInfo(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<IndexInfoResponse> createIndexInfo(IndexInfoCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(indexInfoService.createIndexInfo(request));
     }
 
     @Override
-    public ResponseEntity<IndexInfoResponse> updateIndexInfo(Long id, IndexInfoUpdateRequest request){
-        IndexInfoResponse response = indexInfoService.updateIndexInfo(id, request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<IndexInfoResponse> getIndexInfo(Long id) {
+        return ResponseEntity.ok(indexInfoService.getIndexInfo(id));
     }
 
     @Override
-    public  ResponseEntity<Void> deleteIndexInfo(Long id){
+    public ResponseEntity<IndexInfoResponse> updateIndexInfo(Long id, IndexInfoUpdateRequest request) {
+        return ResponseEntity.ok(indexInfoService.updateIndexInfo(id, request));
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteIndexInfo(Long id) {
         indexInfoService.deleteIndexInfo(id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<CursorPageResponse<IndexInfoResponse>> getIndexInfoList(
-            IndexInfoSearchCondition condition, Long idAfter, int size){
-        // Service도 CursorPageResponse를 반환하도록 수정 필요
-        CursorPageResponse<IndexInfoResponse> responses = indexInfoService.getIndexInfoList(condition, idAfter, size);
-        return ResponseEntity.ok(responses);
+            IndexInfoSearchCondition condition, Long idAfter, int size) {
+        return ResponseEntity.ok(indexInfoService.getIndexInfoList(condition, idAfter, size));
     }
 
     @Override
     public ResponseEntity<List<IndexInfoSummaryDto>> getIndexInfoSummaries() {
-        List<IndexInfoSummaryDto> summaries = indexInfoService.getIndexInfoSummaries();
-        return ResponseEntity.ok(summaries);
+        return ResponseEntity.ok(indexInfoService.getIndexInfoSummaries());
     }
-
-
 }

@@ -40,7 +40,7 @@ public class IntegrationSearchCondition {
     private LocalDateTime jobTimeTo;
 
     @Parameter(description = "작업 상태 (SUCCESS, FAILED)", schema = @Schema(allowableValues = {"SUCCESS", "FAILED"}))
-    private String status; // 프론트는 FAILED로 보내고 우리는 FAIL로 매핑해야 합니다.
+    private String status; // 프론트는 FAILED로 보내고 우리는 FAIL로 매핑함.
 
     @Parameter(description = "이전 페이지 마지막 요소 ID")
     private Long idAfter;

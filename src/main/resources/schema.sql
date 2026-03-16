@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS index_info
     index_classification_name VARCHAR(100) NOT NULL,
     index_name                VARCHAR(255) NOT NULL,
     employed_items_count      INTEGER,
-    base_point_in_time        VARCHAR(20),
+    base_point_in_time        DATE,
     base_index                DECIMAL,
     source_type               VARCHAR(20)  NOT NULL,
     favorite                  BOOLEAN      NOT NULL DEFAULT false,

@@ -33,7 +33,7 @@ public class BasicDashboardService implements DashboardService {
     @Override
     public List<IndexPerformanceDto> getFavoritePerformance(PeriodType periodType) {
         List<IndexInfo> favoriteList = indexInfoRepository.findAllByFavoriteTrue();
-        if(favoriteList.isEmpty()) return List.of();
+        if (favoriteList.isEmpty()) return List.of();
 
         List<Long> idList = favoriteList.stream().map(IndexInfo::getId).toList();
 
@@ -43,8 +43,10 @@ public class BasicDashboardService implements DashboardService {
         List<IndexData> currentDataList = indexDataRepository.findMostRecentByIndexInfoIdsAndMaxDate(idList, currentDate);
         List<IndexData> pastDataList = indexDataRepository.findClosestPastByIndexInfoIdsAndTargetDate(idList, pastDate, pastDate.minusDays(30));
 
-        Map<Long, IndexData> currentMap = currentDataList.stream().collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
-        Map<Long, IndexData> pastMap = pastDataList.stream().collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
+        Map<Long, IndexData> currentMap = currentDataList.stream()
+                .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
+        Map<Long, IndexData> pastMap = pastDataList.stream()
+                .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
 
         return favoriteList.stream().map(indexInfo -> {
             IndexData current = currentMap.get(indexInfo.getId());
@@ -64,7 +66,7 @@ public class BasicDashboardService implements DashboardService {
 
             return new IndexPerformanceDto(
                     indexInfo.getId(),
-                    indexInfo.getIndexClassificationName(),
+                    indexInfo.getIndexClassification(),
                     indexInfo.getIndexName(),
                     versus,
                     fluctuationRate,
@@ -123,7 +125,7 @@ public class BasicDashboardService implements DashboardService {
 
         return new IndexChartDto(
                 indexInfo.getId(),
-                indexInfo.getIndexClassificationName(),
+                indexInfo.getIndexClassification(),
                 indexInfo.getIndexName(),
                 periodType,
                 dataPoints,
@@ -150,9 +152,9 @@ public class BasicDashboardService implements DashboardService {
         Map<Long, IndexData> pastMap = pastDataList.stream().collect(Collectors.toMap(
                 d -> d.getIndexInfo().getId(), d -> d, (a, b) -> byDateDesc.compare(a, b) <= 0 ? a : b));
 
-        List<IndexPerformanceDto> performances = allIndexInfos.stream().map(indexInfo -> {
-                    IndexData current = currentMap.get(indexInfo.getId());
-                    IndexData past = pastMap.get(indexInfo.getId());
+        List<IndexPerformanceDto> performances = allIndexInfos.stream().map(info -> {
+                    IndexData current = currentMap.get(info.getId());
+                    IndexData past = pastMap.get(info.getId());
 
                     if (current == null || past == null) return null;
 
@@ -167,9 +169,9 @@ public class BasicDashboardService implements DashboardService {
                     }
 
                     return new IndexPerformanceDto(
-                            indexInfo.getId(),
-                            indexInfo.getIndexClassificationName(),
-                            indexInfo.getIndexName(),
+                            info.getId(),
+                            info.getIndexClassification(),
+                            info.getIndexName(),
                             versus,
                             fluctuationRate,
                             currentPrice,
@@ -184,7 +186,9 @@ public class BasicDashboardService implements DashboardService {
                 .toList();
 
         if (indexInfoId != null) {
-            return allRanked.stream().filter(r -> r.performance().indexInfoId().equals(indexInfoId)).toList();
+            return allRanked.stream()
+                    .filter(r -> r.performance().indexInfoId().equals(indexInfoId))
+                    .toList();
         }
 
         return allRanked.stream().limit(limit).toList();

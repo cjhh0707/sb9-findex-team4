@@ -19,9 +19,5 @@ public record IndexDataCreateRequest(
         BigDecimal fluctuationRate,     // 등락률
         Long tradingQuantity,           // 거래량
         Long tradingPrice,              // 거래 대금
-        Long marketTotalAmount,      // 상장 시가 총액
-        BigDecimal yearRecordHighPrice, // 연중 최고치
-        String yearRecordHighDate,      // 연중 최고치 기록 일자
-        BigDecimal yearRecordLowPrice,  // 연중 최저치
-        String yearRecordLowDate        // 연중 최저치 기록 일자
+        Long marketTotalAmount          // 상장 시가 총액
 ) {}

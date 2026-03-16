@@ -18,23 +18,19 @@ public class IndexDataMapper {
    */
   public IndexData toEntity(IndexDataCreateRequest request, IndexInfo indexInfo) {
     return IndexData.builder()
-        .indexInfo(indexInfo)
-        .baseDate(request.baseDate()) // .getBaseDate() -> .baseDate()
-        .sourceType(SourceType.USER) // 직접 등록 시 기본값 USER 설정
-        .marketPrice(request.marketPrice())
-        .closingPrice(request.closingPrice())
-        .highPrice(request.highPrice())
-        .lowPrice(request.lowPrice())
-        .versus(request.versus())
-        .fluctuationRate(request.fluctuationRate())
-        .tradingQuantity(request.tradingQuantity())
-        .tradingPrice(request.tradingPrice())
-        .marketTotalAmount(request.marketTotalAmount())
-        .yearRecordHighPrice(request.yearRecordHighPrice())
-        .yearRecordHighDate(request.yearRecordHighDate())
-        .yearRecordLowPrice(request.yearRecordLowPrice())
-        .yearRecordLowDate(request.yearRecordLowDate())
-        .build();
+            .indexInfo(indexInfo)
+            .baseDate(request.baseDate())
+            .sourceType(SourceType.USER)    //직접 등록시 기본값 USER
+            .marketPrice(request.marketPrice())
+            .closingPrice(request.closingPrice())
+            .highPrice(request.highPrice())
+            .lowPrice(request.lowPrice())
+            .versus(request.versus())
+            .fluctuationRate(request.fluctuationRate())
+            .tradingQuantity(request.tradingQuantity())
+            .tradingPrice(request.tradingPrice())
+            .marketTotalAmount(request.marketTotalAmount())
+            .build();
   }
 
   /**
@@ -59,25 +55,12 @@ public class IndexDataMapper {
             .build();
   }
 
-  /**
-   * [목록 포장] 실물(Entity) -> 목록용 요약 영수증(Record)
-   */
-  public IndexDataListResponse toListResponse(IndexData entity) {
-    return IndexDataListResponse.builder()
-        .id(entity.getId())
-        .baseDate(entity.getBaseDate())
-        .closingPrice(entity.getClosingPrice())
-        .versus(entity.getVersus())
-        .fluctuationRate(entity.getFluctuationRate())
-        .build();
-  }
 
   /**
    * [추가] 기존 엔티티의 값을 수정 요청된 데이터로 업데이트합니다.
    */
   public void updateEntityFromDto(IndexDataUpdateRequest request, IndexData entity) {
     entity.update(
-            request.sourceType() != null ? request.sourceType() : entity.getSourceType(),
             request.marketPrice(),
             request.closingPrice(),
             request.highPrice(),

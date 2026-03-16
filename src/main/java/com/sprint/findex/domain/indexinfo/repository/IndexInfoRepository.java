@@ -21,21 +21,20 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
    */
   @Query("""
         SELECT i FROM IndexInfo i
-        WHERE (:indexClassificationName IS NULL OR i.indexClassificationName LIKE CONCAT('%', :indexClassificationName, '%'))
+        WHERE (:indexClassification IS NULL OR i.indexClassification LIKE CONCAT('%', :indexClassification, '%'))
           AND (:indexName IS NULL OR i.indexName LIKE CONCAT('%', :indexName, '%'))
           AND (:favorite IS NULL OR i.favorite = :favorite)
-          AND (:lastId IS NULL OR i.id < :lastId)
-        ORDER BY i.id DESC
+          AND (:idAfter IS NULL OR i.id > :idAfter)
         """)
   List<IndexInfo> searchIndexInfos(
-      @Param("indexClassificationName") String indexClassificationName,
-      @Param("indexName") String indexName,
-      @Param("favorite") Boolean favorite,
-      @Param("lastId") Long lastId,
-      Pageable pageable
+          @Param("indexClassification") String indexClassification,
+          @Param("indexName") String indexName,
+          @Param("favorite") Boolean favorite,
+          @Param("idAfter") Long idAfter,
+          Pageable pageable
   );
   /**지수 분류명과 지수명으로 중복 여부를 확인하는 기본 제공 메서드(등록 시 유효성 검사용)*/
-  boolean existsByIndexClassificationNameAndIndexName(String indexClassificationName, String indexName);
+  boolean existsByIndexClassificationAndIndexName(String indexClassification, String indexName);
 
   //대시보드(관심 지수 성과 조회)를 위한 추가 메서드
   List<IndexInfo> findAllByFavoriteTrue();

@@ -12,7 +12,6 @@ import com.sprint.findex.domain.indexinfo.repository.IndexInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -61,13 +60,8 @@ public class AutoIntegrationService {
       idAfter = Long.parseLong(cursor);
     }
 
-    // 정렬 생성
-    Sort sort = sortDirection.equalsIgnoreCase("desc")
-            ? Sort.by(sortField).descending()
-            : Sort.by(sortField).ascending();
-
-    // size + 1 조회 후 다음 페이지 확인
-    Pageable pageable = PageRequest.of(0, size + 1, sort);
+    // size + 1 조회 후 다음 페이지 확인 (정렬은 repository 쿼리의 ORDER BY a.id ASC 사용)
+    Pageable pageable = PageRequest.of(0, size + 1);
 
     List<AutoIntegration> list = autoIntegrationRepository.search(
             indexInfoId,

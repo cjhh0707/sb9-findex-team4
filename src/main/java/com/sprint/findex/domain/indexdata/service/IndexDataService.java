@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -40,8 +40,8 @@ public class IndexDataService {
           Long indexInfoId, LocalDate startDate, LocalDate endDate,
           Long idAfter, String sortField, String sortDirection, int size) {
 
-    Sort sort = sortDirection.equalsIgnoreCase("desc") ? Sort.by(sortField).descending() : Sort.by(sortField).ascending();
-    Pageable pageable = PageRequest.of(0, size, sort);
+    // 정렬은 repository 쿼리의 ORDER BY i.id DESC 사용 (ID 기반 커서 페이징과 일치)
+    Pageable pageable = PageRequest.of(0, size);
 
     Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, startDate, endDate, idAfter, pageable);
 
