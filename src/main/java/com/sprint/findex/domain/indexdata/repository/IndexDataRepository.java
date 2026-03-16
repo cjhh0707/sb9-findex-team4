@@ -25,8 +25,7 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
       "WHERE (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
       "AND (:startDate IS NULL OR i.baseDate >= :startDate) " +
       "AND (:endDate IS NULL OR i.baseDate <= :endDate) " +
-      "AND (:idAfter IS NULL OR i.id < :idAfter) " + // lastId 대신 idAfter를 사용하여 커서 조건 적용
-      "ORDER BY i.id DESC")
+      "AND (:idAfter IS NULL OR i.id < :idAfter) ") // lastId 대신 idAfter를 사용하여 커서 조건 적용
   Slice<IndexData> searchIndexData(
       @Param("indexInfoId") Long indexInfoId,
       @Param("startDate") LocalDate startDate,
@@ -49,6 +48,9 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
           @Param("endDate") LocalDate endDate,
           Sort sort // 정렬 파라미터 추가
   );
+
+  // OpenAPI 연동용: (지수 ID + 날짜) 단건 조회 (upsert 판별)
+  Optional<IndexData> findByIndexInfoIdAndBaseDate(Long indexInfoId, LocalDate baseDate);
 
   // 1. 특정 지수의 가장 최신 데이터 1개 조회
   Optional<IndexData> findTopByIndexInfoIdOrderByBaseDateDesc(Long indexInfoId);

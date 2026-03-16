@@ -2,6 +2,7 @@ package com.sprint.findex.domain.indexinfo.repository;
 
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,5 +39,8 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
 
   //대시보드(관심 지수 성과 조회)를 위한 추가 메서드
   List<IndexInfo> findAllByFavoriteTrue();
+
+  // OpenAPI 연동: 분류명 + 지수명으로 단건 조회
+  Optional<IndexInfo> findByIndexClassificationAndIndexName(String indexClassification, String indexName);
 
 }

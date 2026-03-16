@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface IntegrationRepository extends JpaRepository<Integration, Long> {
 
@@ -36,5 +37,20 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
             @Param("jobTimeTo") LocalDateTime jobTimeTo,
             @Param("result") JobResult result,
             Pageable pageable
+    );
+
+    /**
+     * 자동 연동 스케줄러용: 특정 지수의 마지막 성공 targetDate 조회
+     * worker="system" 조건으로 배치 실행 기록만 필터링
+     */
+    @Query("SELECT MAX(i.targetDate) FROM Integration i " +
+            "WHERE i.indexInfo.id = :indexInfoId " +
+            "AND i.jobType = :jobType " +
+            "AND i.worker = 'system' " +
+            "AND i.result = :result")
+    Optional<LocalDate> findLastSuccessTargetDate(
+            @Param("indexInfoId") Long indexInfoId,
+            @Param("jobType") JobType jobType,
+            @Param("result") JobResult result
     );
 }

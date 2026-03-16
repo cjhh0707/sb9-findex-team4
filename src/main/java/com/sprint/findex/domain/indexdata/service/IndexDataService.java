@@ -40,8 +40,11 @@ public class IndexDataService {
           Long indexInfoId, LocalDate startDate, LocalDate endDate,
           Long idAfter, String sortField, String sortDirection, int size) {
 
-    // 정렬은 repository 쿼리의 ORDER BY i.id DESC 사용 (ID 기반 커서 페이징과 일치)
-    Pageable pageable = PageRequest.of(0, size);
+    // 정렬 파라미터를 pageable에 실제로 반영
+    Sort sort = sortDirection.equalsIgnoreCase("desc")
+            ? Sort.by(sortField).descending()
+            : Sort.by(sortField).ascending();
+    Pageable pageable = PageRequest.of(0, size, sort);
 
     Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, startDate, endDate, idAfter, pageable);
 

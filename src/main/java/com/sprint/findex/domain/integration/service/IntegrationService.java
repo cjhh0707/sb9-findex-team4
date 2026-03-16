@@ -11,6 +11,7 @@ import com.sprint.findex.domain.integration.entity.JobResult;
 import com.sprint.findex.domain.integration.entity.JobType;
 import com.sprint.findex.domain.integration.mapper.IntegrationMapper;
 import com.sprint.findex.domain.integration.repository.IntegrationRepository;
+import com.sprint.findex.domain.openapi.ExternalApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,11 @@ public class IntegrationService {
     private final IntegrationRepository integrationRepository;
     private final IntegrationMapper integrationMapper;
     private final IndexInfoRepository indexInfoRepository;
+    private final ExternalApiService externalApiService;
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 연동 작업 목록 조회
+    // ──────────────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public CursorPageResponse<IntegrationResponse> getIntegrations(IntegrationSearchCondition condition) {
@@ -76,9 +82,53 @@ public class IntegrationService {
         return new CursorPageResponse<>(content, null, nextIdAfter, size, null, hasNext);
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 지수 정보 연동
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public List<IntegrationResponse> createIndexInfoSyncJob(String workerIp) {
+        log.info("[지수 정보 연동 요청 접수] 작업자 IP: {}", workerIp);
+
+        List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
+
+        // 지수별 이력 생성 (요구사항: "대상 지수가 여러 개인 경우 지수 별로 이력을 등록")
+        // DB에 지수가 없으면 빈 리스트 반환 (API 연동으로 신규 지수가 생성되나 이력은 기존 지수 기준으로만 남김)
+        List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
+                integrationRepository.save(
+                        integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
+                                LocalDate.now(), workerIp, JobResult.NEW)
+                )
+        ).toList();
+
+        savedJobs.forEach(j -> this.executeOpenApiSyncInBackground(j.getId()));
+        return integrationMapper.toResponseList(savedJobs);
+    }
+
+    @Async
+    @Transactional
+    public void executeOpenApiSyncInBackground(Long jobId) {
+        log.info("[비동기] 지수 정보 연동 시작. Job ID: {}", jobId);
+        integrationRepository.findById(jobId).ifPresent(job -> {
+            try {
+                externalApiService.syncIndexInfo();
+                job.updateResult(JobResult.SUCCESS);
+                log.info("[비동기] 지수 정보 연동 완료. Job ID: {}", jobId);
+            } catch (Exception e) {
+                log.error("[비동기] 지수 정보 연동 실패. Job ID: {}, error: {}", jobId, e.getMessage(), e);
+                job.updateResult(JobResult.FAILED);
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 지수 데이터 연동
+    // ──────────────────────────────────────────────────────────────────────────
+
     @Transactional
     public List<IntegrationResponse> createIndexDataSyncJob(IntegrationSyncRequest request, String workerIp) {
-        log.info("[지수 데이터 연동 요청 접수] 작업자 IP: {}", workerIp);
+        log.info("[지수 데이터 연동 요청 접수] 작업자 IP: {}, 기간: {} ~ {}",
+                workerIp, request.getBaseDateFrom(), request.getBaseDateTo());
 
         List<IndexInfo> targetInfos;
         List<Long> ids = request.getIndexInfoIds();
@@ -90,12 +140,13 @@ public class IntegrationService {
 
         LocalDate targetDate = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
 
-        List<Integration> savedJobs = targetInfos.stream().map(indexInfo -> {
-            Integration job = integrationMapper.toEntity(
-                    indexInfo, JobType.INDEX_DATA, targetDate, workerIp, JobResult.NEW
-            );
-            return integrationRepository.save(job);
-        }).toList();
+        // 지수별로 Integration 이력 생성 (요구사항: "지수, 날짜 별로 이력을 등록")
+        List<Integration> savedJobs = targetInfos.stream().map(indexInfo ->
+                integrationRepository.save(
+                        integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA,
+                                targetDate, workerIp, JobResult.NEW)
+                )
+        ).toList();
 
         savedJobs.forEach(job -> this.executeIndexDataSyncInBackground(job.getId(), request));
 
@@ -105,47 +156,44 @@ public class IntegrationService {
     @Async
     @Transactional
     public void executeIndexDataSyncInBackground(Long jobId, IntegrationSyncRequest request) {
-        log.info("[비동기 지수 데이터 연동 시작] Job ID: {}, 기간: {} ~ {}",
+        log.info("[비동기] 지수 데이터 연동 시작. Job ID: {}, 기간: {} ~ {}",
                 jobId, request.getBaseDateFrom(), request.getBaseDateTo());
-        try {
-            // TODO: ExternalApiService를 주입받아 OpenAPI 통신 및 데이터 저장 로직 구현
-            integrationRepository.findById(jobId).ifPresent(job -> job.updateResult(JobResult.SUCCESS));
-            log.info("[비동기 지수 데이터 연동 완료] Job ID: {}", jobId);
-        } catch (Exception e) {
-            log.error("[비동기 지수 데이터 연동 실패] 오류 발생: {}", e.getMessage(), e);
-            integrationRepository.findById(jobId).ifPresent(job -> job.updateResult(JobResult.FAILED));
-        }
+
+        integrationRepository.findById(jobId).ifPresent(job -> {
+            try {
+                IndexInfo indexInfo = job.getIndexInfo();
+                LocalDate from = request.getBaseDateFrom();
+                LocalDate to = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
+
+                externalApiService.syncIndexData(indexInfo, from, to);
+                job.updateResult(JobResult.SUCCESS);
+                log.info("[비동기] 지수 데이터 연동 완료. Job ID: {}", jobId);
+            } catch (Exception e) {
+                log.error("[비동기] 지수 데이터 연동 실패. Job ID: {}, error: {}", jobId, e.getMessage(), e);
+                job.updateResult(JobResult.FAILED);
+            }
+        });
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 배치(자동 연동 스케줄러)에서 호출하는 메서드
+    // ──────────────────────────────────────────────────────────────────────────
+
     @Transactional
-    public List<IntegrationResponse> createIndexInfoSyncJob(String workerIp) {
-        log.info("[지수 정보 연동 요청 접수] 작업자 IP: {}", workerIp);
+    public void runBatchSync(IndexInfo indexInfo, LocalDate from, LocalDate to, String worker) {
+        log.info("[배치 연동] 지수: {}, 기간: {} ~ {}", indexInfo.getIndexName(), from, to);
 
-        List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
+        Integration job = integrationRepository.save(
+                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
+        );
 
-        List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo -> {
-            Integration job = integrationMapper.toEntity(
-                    indexInfo, JobType.INDEX_INFO, LocalDate.now(), workerIp, JobResult.NEW
-            );
-            return integrationRepository.save(job);
-        }).toList();
-
-        savedJobs.forEach(job -> this.executeOpenApiSyncInBackground(job.getId()));
-
-        return integrationMapper.toResponseList(savedJobs);
-    }
-
-    @Async
-    @Transactional
-    public void executeOpenApiSyncInBackground(Long jobId) {
-        log.info("[백그라운드 작업 시작] 지수 정보 연동 (Job ID: {})", jobId);
         try {
-            // TODO: ExternalApiService를 주입받아 OpenAPI 통신 및 데이터 저장 로직 구현
-            integrationRepository.findById(jobId).ifPresent(job -> job.updateResult(JobResult.SUCCESS));
-            log.info("[백그라운드 작업 완료] 지수 정보 연동 성공");
+            externalApiService.syncIndexData(indexInfo, from, to);
+            job.updateResult(JobResult.SUCCESS);
+            log.info("[배치 연동 완료] 지수: {}", indexInfo.getIndexName());
         } catch (Exception e) {
-            log.error("[백그라운드 작업 실패] 오류 발생: {}", e.getMessage(), e);
-            integrationRepository.findById(jobId).ifPresent(job -> job.updateResult(JobResult.FAILED));
+            log.error("[배치 연동 실패] 지수: {}, error: {}", indexInfo.getIndexName(), e.getMessage(), e);
+            job.updateResult(JobResult.FAILED);
         }
     }
 }

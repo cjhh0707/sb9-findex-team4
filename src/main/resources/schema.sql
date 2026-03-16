@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS integration
     worker        VARCHAR(100) NOT NULL,
     job_time      TIMESTAMP    NOT NULL,
     result        VARCHAR(20)  NOT NULL,
+    created_at          TIMESTAMP NOT NULL,
+    updated_at          TIMESTAMP NOT NULL,
     CONSTRAINT fk_integration_index_info FOREIGN KEY (index_info_id) REFERENCES index_info (id) ON DELETE CASCADE
     );
 
