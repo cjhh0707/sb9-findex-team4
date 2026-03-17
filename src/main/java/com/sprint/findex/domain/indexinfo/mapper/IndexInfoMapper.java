@@ -18,7 +18,16 @@ public class IndexInfoMapper {
         .build();
   }
   public IndexInfoResponse toResponse(IndexInfo indexInfo) {
-    return IndexInfoResponse.from(indexInfo);
+    return new IndexInfoResponse(
+        indexInfo.getId(),
+        indexInfo.getIndexClassificationName(),
+        indexInfo.getIndexName(),
+        indexInfo.getEmployedItemsCount(),
+        indexInfo.getBasePointInTime(),
+        indexInfo.getBaseIndex(),
+        indexInfo.getSourceType(),
+        indexInfo.getFavorite()
+    );
   }
 
 }
