@@ -1,15 +1,16 @@
 package com.sprint.findex.domain.indexinfo.service;
 
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoCreateRequest;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoResponse;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoSearchCondition;
-import com.sprint.findex.domain.indexinfo.dto.IndexInfoUpdateRequest;
+import com.sprint.findex.common.dto.CursorPageResponse;
+import com.sprint.findex.common.type.SourceType;
+import com.sprint.findex.domain.autointegration.service.AutoIntegrationService;
+import com.sprint.findex.domain.indexinfo.dto.*;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
 import com.sprint.findex.domain.indexinfo.repository.IndexInfoRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,82 +19,112 @@ import org.springframework.transaction.annotation.Transactional;
 public class IndexInfoService {
 
   private final IndexInfoRepository indexInfoRepository;
+  private final AutoIntegrationService autoIntegrationService;
 
   @Transactional
-  public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request){
+  public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request) {
     //중복 검증
-    if (indexInfoRepository.existsByIndexClassificationNameAndIndexName(
-        request.indexClassificationName(), request.indexName())){
+    if (indexInfoRepository.existsByIndexClassificationAndIndexName(
+            request.indexClassification(), request.indexName())) {
       throw new IllegalArgumentException("이미 등록된 지수 분류명과 지수명 조합입니다.");
     }
 
     //DTO -> Entity
     IndexInfo indexInfo = IndexInfo.builder()
-        .indexClassificationName(request.indexClassificationName())
-        .indexName(request.indexName())
-        .employedItemsCount(request.employedItemsCount())
-        .basePointInTime(request.basePointInTime())
-        .baseIndex(request.baseIndex())
-        .sourceType(request.sourceType())
-        .favorite(request.favorite())
-        .build();
+            .indexClassification(request.indexClassification())
+            .indexName(request.indexName())
+            .employedItemsCount(request.employedItemsCount())
+            .basePointInTime(request.basePointInTime())
+            .baseIndex(request.baseIndex())
+            .sourceType(SourceType.USER)
+            .favorite(request.favorite() != null ? request.favorite() : false)
+            .build();
 
     IndexInfo savedIndexInfo = indexInfoRepository.save(indexInfo);
 
     // 요구사항의 "자동 연동 설정 정보도 같이 초기화되어야 합니다." 처리를 위해
     // 추후 AutoIntegrationRepository를 주입받아 비활성화 상태로 저장하는 로직 추가 필요
+    autoIntegrationService.createAutoIntegration(savedIndexInfo.getId());
 
     return IndexInfoResponse.from(savedIndexInfo);
   }
 
   @Transactional
-  public IndexInfoResponse updateIndexInfo(Long id, IndexInfoUpdateRequest request){
+  public IndexInfoResponse getIndexInfo(Long id) {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
-        .orElseThrow(()-> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
-
-    // 정보 수정
-    indexInfo.updateInfo(
-        request.employedItemsCount(),
-        request.basePointInTime(),
-        request.baseIndex()
-    );
-
-    //즐겨찾기 상태 수정
-    indexInfo.updateFavorite(request.favorite());
-
-    //수정된 결과를 DTO로 변환하여 반환
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
     return IndexInfoResponse.from(indexInfo);
   }
 
   @Transactional
-  public void deleteIndexInfo(Long id){
+  public IndexInfoResponse updateIndexInfo(Long id, IndexInfoUpdateRequest request) {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
-        .orElseThrow(()-> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
 
-    //스키마 파일에 ON DELETE CASCADE 덕분에 여기서 IndexInfo만 삭제해도 연관 데이터 자동으로 DB에서 삭제
+    indexInfo.updateInfo(
+            request.employedItemsCount(),
+            request.basePointInTime(),
+            request.baseIndex()
+    );
+    indexInfo.updateFavorite(request.favorite());
+
+    return IndexInfoResponse.from(indexInfo);
+  }
+
+  @Transactional
+  public void deleteIndexInfo(Long id) {
+    IndexInfo indexInfo = indexInfoRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
     indexInfoRepository.delete(indexInfo);
   }
 
   @Transactional(readOnly = true)
-  public List<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition){
-    //클라이언트가 pageSize 안보냈을 경우를 대비해 기본값 10
-    int size = (condition.pageSize() != null) ? condition.pageSize() : 10;
+  public CursorPageResponse<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition, Long idAfter, int size) {
+    String sortField = condition.sortField() != null ? condition.sortField() : "indexClassification";
+    String sortDirection = condition.sortDirection() != null ? condition.sortDirection() : "asc";
 
-    //첫번째 페이지(0)부터 size만큼 가져옴
-    Pageable pageable = PageRequest.of(0, size);
+    Sort sort = sortDirection.equalsIgnoreCase("desc")
+            ? Sort.by(sortField).descending()
+            : Sort.by(sortField).ascending();
 
-    //레포지토리에 만들어둔 동적 검색 쿼리를 호출
+    Pageable pageable = PageRequest.of(0, size + 1, sort);
+
     List<IndexInfo> indexInfos = indexInfoRepository.searchIndexInfos(
-        condition.indexClassificationName(),
-        condition.indexName(),
-        condition.favorite(),
-        condition.lastId(),
-        pageable
+            condition.indexClassification(),
+            condition.indexName(),
+            condition.favorite(),
+            idAfter,
+            pageable
     );
 
-    return indexInfos.stream()
-        .map(IndexInfoResponse::from)
-        .toList();
+    boolean hasNext = indexInfos.size() > size;
+
+    List<IndexInfoResponse> content = indexInfos.stream()
+            .limit(size)
+            .map(IndexInfoResponse::from)
+            .toList();
+
+    Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
+
+    return new CursorPageResponse<>(
+            content,
+            null,
+            nextIdAfter,
+            size,
+            null,
+            hasNext
+    );
+  }
+
+  @Transactional(readOnly = true)
+  public List<IndexInfoSummaryDto> getIndexInfoSummaries() {
+    return indexInfoRepository.findAll().stream()
+            .map(info -> new IndexInfoSummaryDto(
+                    info.getId(),
+                    info.getIndexClassification(),
+                    info.getIndexName()
+            ))
+            .toList();
   }
 
 }

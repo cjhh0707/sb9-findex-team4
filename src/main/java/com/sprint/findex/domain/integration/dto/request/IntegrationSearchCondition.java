@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class IntegrationSearchCondition {
 
     @Parameter(description = "연동 작업 유형 (INDEX_INFO, INDEX_DATA)", schema = @Schema(allowableValues = {"INDEX_INFO", "INDEX_DATA"}))
-    private JobType jobType; // Enum을 사용하면 Swagger가 알아서 드롭다운으로 만들어줍니다.
+    private JobType jobType;
 
     @Parameter(description = "지수 정보 ID")
     private Long indexInfoId;
@@ -40,7 +40,7 @@ public class IntegrationSearchCondition {
     private LocalDateTime jobTimeTo;
 
     @Parameter(description = "작업 상태 (SUCCESS, FAILED)", schema = @Schema(allowableValues = {"SUCCESS", "FAILED"}))
-    private String status;
+    private String status; // 프론트는 FAILED로 보내고 우리는 FAIL로 매핑함.
 
     @Parameter(description = "이전 페이지 마지막 요소 ID")
     private Long idAfter;
@@ -55,5 +55,5 @@ public class IntegrationSearchCondition {
     private String sortDirection;
 
     @Parameter(description = "페이지 크기")
-    private Integer size = 10; // 기본값 10
+    private Integer size = 10;
 }

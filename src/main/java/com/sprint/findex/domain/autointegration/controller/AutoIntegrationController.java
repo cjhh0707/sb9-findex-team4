@@ -1,15 +1,16 @@
 package com.sprint.findex.domain.autointegration.controller;
 
-import com.sprint.findex.domain.autointegration.dto.AutoIntegrationCreateDto;
+import com.sprint.findex.common.dto.CursorPageResponse;
 import com.sprint.findex.domain.autointegration.dto.AutoIntegrationDto;
 import com.sprint.findex.domain.autointegration.dto.AutoIntegrationUpdateDto;
 import com.sprint.findex.domain.autointegration.service.AutoIntegrationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-// API 명세서 URI 루트 -> /api/auto-sync-configs/{id} 맞춰 진행
+@Tag(name = "자동 연동 설정 API", description = "자동 연동 설정 관리 API")
 @RestController
 @RequestMapping("/api/auto-sync-configs")
 @RequiredArgsConstructor
@@ -17,41 +18,26 @@ public class AutoIntegrationController {
 
     private final AutoIntegrationService autoIntegrationService;
 
-    // 새로운 자동 연동 설정 생성
-    @PostMapping
-    public AutoIntegrationDto create(@RequestBody AutoIntegrationCreateDto dto) {
-        return autoIntegrationService.createAutoIntegration(dto.indexInfoId());
+    @Operation(summary = "자동 연동 설정 목록 조회", description = "자동 연동 설정 목록을 조회합니다.")
+    @GetMapping
+    public ResponseEntity<CursorPageResponse<AutoIntegrationDto>> getAutoSyncConfigs(
+            @RequestParam(required = false) Long indexInfoId,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) Long idAfter,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "indexInfo.indexName") String sortField,
+            @RequestParam(defaultValue = "asc") String sortDirection,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(autoIntegrationService.getAutoSyncConfigs(
+                indexInfoId, enabled, idAfter, cursor, sortField, sortDirection, size));
     }
 
-    // ID로 조회
-    @GetMapping("/{id}")
-    public AutoIntegrationDto getById(@PathVariable Long id) {
-        return autoIntegrationService.getAutoIntegration(id);
-    }
-
-    // Index ID로 조회
-    @GetMapping("/by-index/{indexId}")
-    public AutoIntegrationDto getByIndex(@PathVariable Long indexId) {
-        return autoIntegrationService.getAutoIntegrationByIndexId(indexId);
-    }
-
-    // 활성화 상태 기준 전체 조회
-    @GetMapping("/enabled/{enabled}")
-    public List<AutoIntegrationDto> getAllByEnabled(@PathVariable boolean enabled) {
-        return autoIntegrationService.getAllByEnabled(enabled);
-    }
-
-    // 활성화 상태 업데이트
+    @Operation(summary = "자동 연동 설정 수정", description = "기존 자동 연동 설정을 수정합니다.")
     @PatchMapping("/{id}")
-    public AutoIntegrationDto updateEnabled(
+    public ResponseEntity<AutoIntegrationDto> updateEnabled(
             @PathVariable Long id,
             @RequestBody AutoIntegrationUpdateDto dto) {
-        return autoIntegrationService.updateEnabled(id, dto.enabled());
-    }
-
-    // 마지막 동기화 날짜 업데이트
-    @PatchMapping("/{id}/last-sync")
-    public AutoIntegrationDto updateLastSync(@PathVariable Long id) {
-        return autoIntegrationService.updateLastIntegrationDate(id, null); // 날짜는 서비스에서 now 처리
+        return ResponseEntity.ok(autoIntegrationService.updateEnabled(id, dto.enabled()));
     }
 }
