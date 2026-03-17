@@ -113,5 +113,4 @@ public class AutoIntegrationService {
     setting.updateLastIntegrationAt(LocalDateTime.now());
     return autoIntergrationMapper.toDto(setting);
   }
-
 }
