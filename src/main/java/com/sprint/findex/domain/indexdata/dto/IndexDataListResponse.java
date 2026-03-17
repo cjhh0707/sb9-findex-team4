@@ -14,4 +14,5 @@ public record IndexDataListResponse(
     BigDecimal closingPrice,    // 종가
     BigDecimal versus,          // 대비
     BigDecimal fluctuationRate  // 등락률
-) {}
+)
+{}
