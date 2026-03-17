@@ -7,7 +7,7 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/findex
-    username: postgres
+    username: findex_user
     password: 1234
     driver-class-name: org.postgresql.Driver
 

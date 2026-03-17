@@ -1,6 +1,7 @@
 package com.sprint.findex.domain.indexdata.api;
 
-import com.sprint.findex.domain.indexdata.dto.CursorPageResponse;
+
+import com.sprint.findex.common.dto.CursorPageResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataListResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataSearchCondition;
 import io.swagger.v3.oas.annotations.Operation;
