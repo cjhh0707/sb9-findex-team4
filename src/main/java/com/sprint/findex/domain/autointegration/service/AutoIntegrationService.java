@@ -6,6 +6,7 @@ import com.sprint.findex.domain.autointegration.entity.AutoIntegration;
 import com.sprint.findex.domain.autointegration.mapper.AutoIntergrationMapper;
 import com.sprint.findex.domain.autointegration.repository.AutoIntegrationRepository;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
+import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 
 import com.sprint.findex.domain.indexinfo.repository.IndexInfoRepository;
@@ -18,6 +19,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+// ⭐ [추가] 클래스 레벨에 readOnly 트랜잭션을 걸어주면 모든 조회 메서드에서 에러가 안 납니다!
+@Transactional
 public class AutoIntegrationService {
 
   private final AutoIntegrationRepository autoIntegrationRepository;
@@ -91,12 +94,14 @@ public class AutoIntegrationService {
             null,          // 2. nextCursor: 문자열 커서 미사용
             nextIdAfter,   // 3. nextIdAfter: 다음 조회를 위한 커서 ID (이제 정상 동작합니다!)
             size,          // 4. size: 요청 페이지 크기
-            null,          // 5. totalElements: 전체 요소 개수 생략
+            0L,          // 5. totalElements: 전체 요소 개수 생략
             hasNext        // 6. hasNext: 다음 페이지 존재 여부
     );
   }
 
   // 활성화 상태 업데이트
+  // ⭐ [핵심 추가] 이 어노테이션이 있어야 스위치 변경 사항이 DB에 진짜로 저장됩니다!
+  @Transactional
   public AutoIntegrationDto updateEnabled(Long id, boolean enabled) {
     AutoIntegration setting = autoIntegrationRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));

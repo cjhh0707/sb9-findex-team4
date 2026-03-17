@@ -79,7 +79,8 @@ public class IntegrationService {
 
         Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).getId();
 
-        return new CursorPageResponse<>(content, null, nextIdAfter, size, null, hasNext);
+        // ⭐ [수정] 다섯 번째 인자(totalElements)를 null 대신 0L로 변경하여 프론트엔드 에러 방지
+        return new CursorPageResponse<>(content, null, nextIdAfter, size, 0L, hasNext);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

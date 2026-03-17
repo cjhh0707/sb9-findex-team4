@@ -39,14 +39,21 @@ public class IndexDataController {
       @RequestParam(defaultValue = "desc") String sortDirection,
       @RequestParam(defaultValue = "10") int size) {
 
-    Long finalIdAfter = (cursor != null && !cursor.isBlank()) ? Long.parseLong(cursor) : idAfter;
+    // [수정 부분] cursor와 idAfter 중 있는 값을 안전하게 선택
+    Long finalIdAfter = idAfter;
+    if (cursor != null && !cursor.isBlank()) {
+      try {
+        finalIdAfter = Long.parseLong(cursor);
+      } catch (NumberFormatException e) {
+        finalIdAfter = idAfter; // 숫자가 아니면 idAfter 값 유지
+      }
+    }
 
     CursorPageResponse<IndexDataResponse> response = indexDataService.search(
-            indexInfoId, startDate, endDate, finalIdAfter, sortField, sortDirection, size);
+        indexInfoId, startDate, endDate, finalIdAfter, sortField, sortDirection, size);
 
     return ResponseEntity.ok(response);
   }
-
   @Operation(summary = "지수 데이터 상세 조회", description = "특정 ID의 지수 데이터를 조회합니다.")
   @GetMapping("/{id}")
   public ResponseEntity<IndexDataResponse> findById(@PathVariable Long id) {

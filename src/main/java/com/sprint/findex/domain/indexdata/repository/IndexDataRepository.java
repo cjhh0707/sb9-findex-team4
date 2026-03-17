@@ -23,16 +23,15 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
    */
   @Query("SELECT i FROM IndexData i " +
       "WHERE (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
-      "AND (:startDate IS NULL OR i.baseDate >= :startDate) " +
-      "AND (:endDate IS NULL OR i.baseDate <= :endDate) " +
-      "AND (:idAfter IS NULL OR i.id > :idAfter) ") // lastId 대신 idAfter를 사용하여 커서 조건 적용
+      "AND (cast(:startDate as localdate) IS NULL OR i.baseDate >= :startDate) " +
+      "AND (cast(:endDate as localdate) IS NULL OR i.baseDate <= :endDate) " +
+      "AND (:idAfter IS NULL OR i.id > :idAfter)")
   Slice<IndexData> searchIndexData(
       @Param("indexInfoId") Long indexInfoId,
       @Param("startDate") LocalDate startDate,
       @Param("endDate") LocalDate endDate,
-      @Param("idAfter") Long idAfter, // 명세서 규격에 맞춘 커서 파라미터
-      Pageable pageable
-  );
+      @Param("idAfter") Long idAfter,
+      Pageable pageable);
 
   /**
    * [CSV Export] 필터링은 동일하지만 페이징 없이 전체 리스트 조회

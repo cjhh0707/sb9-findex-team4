@@ -243,32 +243,35 @@ public class ExternalApiService {
     }
 
     private OpenApiResponse callApi(String idxCsf, String idxNm,
-                                    LocalDate from, LocalDate to, int pageNo) {
-        String encodedKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
-        UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUriString(baseUrl + STOCK_INDEX_ENDPOINT)
-                .queryParam("serviceKey", encodedKey)
-                .queryParam("resultType", "json")
-                .queryParam("numOfRows", NUM_OF_ROWS)
-                .queryParam("pageNo", pageNo)
-                .queryParam("beginBasDt", from.format(YYYYMMDD))
-                .queryParam("endBasDt", to.format(YYYYMMDD));
+        LocalDate from, LocalDate to, int pageNo) {
+
+        // 1. StringBuilder를 urlBuilder라는 이름으로 정확히 생성합니다.
+        StringBuilder urlBuilder = new StringBuilder(baseUrl + STOCK_INDEX_ENDPOINT);
+
+        // 2. 파라미터들을 하나씩 직접 붙입니다.
+        urlBuilder.append("?serviceKey=").append(apiKey);
+        urlBuilder.append("&resultType=json");
+        urlBuilder.append("&numOfRows=").append(NUM_OF_ROWS);
+        urlBuilder.append("&pageNo=").append(pageNo);
+        urlBuilder.append("&beginBasDt=").append(from.format(YYYYMMDD));
+        urlBuilder.append("&endBasDt=").append(to.format(YYYYMMDD));
 
         if (idxCsf != null && !idxCsf.isBlank()) {
-            builder.queryParam("idxCsf", URLEncoder.encode(idxCsf, StandardCharsets.UTF_8));
+            urlBuilder.append("&idxCsf=").append(URLEncoder.encode(idxCsf, StandardCharsets.UTF_8));
         }
         if (idxNm != null && !idxNm.isBlank()) {
-            builder.queryParam("idxNm", URLEncoder.encode(idxNm, StandardCharsets.UTF_8));
+            urlBuilder.append("&idxNm=").append(URLEncoder.encode(idxNm, StandardCharsets.UTF_8));
         }
 
-        // encode(false) → serviceKey의 특수문자(+, /)를 한 번만 인코딩
-        URI uri = builder.build(true).toUri();
-        log.debug("[OpenAPI] 요청 URI: {}", uri);
+        // 3. urlBuilder에 담긴 문자열을 가져와서 URI를 만듭니다.
+        URI uri = URI.create(urlBuilder.toString());
+
+        log.debug("[OpenAPI] 최종 조립 URI: {}", uri);
 
         return restClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(OpenApiResponse.class);
+            .uri(uri)
+            .retrieve()
+            .body(OpenApiResponse.class);
     }
 
     // Private: 파싱 헬퍼

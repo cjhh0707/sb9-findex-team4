@@ -30,42 +30,66 @@ public class IndexDataService {
   @Transactional
   public IndexDataResponse save(IndexDataCreateRequest request) {
     IndexInfo indexInfo = indexInfoRepository.findById(request.indexInfoId())
-            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다."));
+        .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다."));
 
     IndexData savedData = indexDataRepository.save(indexDataMapper.toEntity(request, indexInfo));
     return indexDataMapper.toResponse(savedData);
   }
 
   public CursorPageResponse<IndexDataResponse> search(
-          Long indexInfoId, LocalDate startDate, LocalDate endDate,
-          Long idAfter, String sortField, String sortDirection, int size) {
+      Long indexInfoId, LocalDate startDate, LocalDate endDate,
+      Long idAfter, String sortField, String sortDirection, int size) {
 
-    // 정렬 파라미터를 pageable에 실제로 반영
+    // 1. 파라미터 null 방어 로직
+    if (idAfter == null) idAfter = 0L;
+    if (indexInfoId == null) indexInfoId = 1L;
+
+    // 2. DB 조회를 위한 날짜 처리
+    LocalDate finalStartDate = (startDate == null) ? LocalDate.of(2000, 1, 1) : startDate;
+    LocalDate finalEndDate = (endDate == null) ? LocalDate.of(2099, 12, 31) : endDate;
+
+    // 3. 정렬 및 페이징 설정
     Sort sort = sortDirection.equalsIgnoreCase("desc")
-            ? Sort.by(sortField).descending()
-            : Sort.by(sortField).ascending();
+        ? Sort.by(sortField).descending()
+        : Sort.by(sortField).ascending();
     Pageable pageable = PageRequest.of(0, size, sort);
 
-    Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, startDate, endDate, idAfter, pageable);
+    // 4. DB 조회 (반드시 finalStartDate, finalEndDate 사용)
+    Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, finalStartDate, finalEndDate, idAfter, pageable);
 
+    // 5. [해결] BigDecimal을 Long/Double로 변환하고 null인 경우 0을 채워줍니다.
     List<IndexDataResponse> content = result.getContent().stream()
-            .map(indexDataMapper::toResponse).toList();
+        .map(data -> new IndexDataResponse(
+            data.getId(),
+            data.getIndexInfo().getId(),
+            data.getBaseDate(),
+            data.getSourceType(),
+            data.getMarketPrice() == null ? java.math.BigDecimal.ZERO : data.getMarketPrice(),
+            data.getClosingPrice() == null ? java.math.BigDecimal.ZERO : data.getClosingPrice(),
+            data.getHighPrice() == null ? java.math.BigDecimal.ZERO : data.getHighPrice(),
+            data.getLowPrice() == null ? java.math.BigDecimal.ZERO : data.getLowPrice(),
+            data.getVersus() == null ? java.math.BigDecimal.ZERO : data.getVersus(),
+            data.getFluctuationRate() == null ? java.math.BigDecimal.ZERO : data.getFluctuationRate(),
+            // Long 타입 필드들 (null이면 0L)
+            data.getTradingQuantity() == null ? 0L : data.getTradingQuantity().longValue(),
+            data.getTradingPrice() == null ? 0L : data.getTradingPrice().longValue(),
+            data.getMarketTotalAmount() == null ? 0L : data.getMarketTotalAmount().longValue()
+        )).toList();
 
     Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
-    return new CursorPageResponse<>(content, null, nextIdAfter, size, null, result.hasNext());
-  }
+    return new CursorPageResponse<>(content, null, nextIdAfter, size, 0L, result.hasNext());  }
 
   public IndexDataResponse findById(Long id) {
     IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 데이터를 찾을 수 없습니다. ID: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("해당 데이터를 찾을 수 없습니다. ID: " + id));
     return indexDataMapper.toResponse(indexData);
   }
 
   @Transactional
   public IndexDataResponse update(Long id, IndexDataUpdateRequest request) {
     IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("수정할 데이터를 찾을 수 없습니다. ID: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("수정할 데이터를 찾을 수 없습니다. ID: " + id));
     indexDataMapper.updateEntityFromDto(request, indexData);
     return indexDataMapper.toResponse(indexData);
   }
@@ -73,14 +97,13 @@ public class IndexDataService {
   @Transactional
   public void delete(Long id) {
     IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("삭제할 데이터를 찾을 수 없습니다. ID: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("삭제할 데이터를 찾을 수 없습니다. ID: " + id));
     indexDataRepository.delete(indexData);
   }
 
   public String exportToCsv(Long indexInfoId, LocalDate startDate, LocalDate endDate, String sortField, String sortDirection) {
     Sort sort = sortDirection.equalsIgnoreCase("desc") ? Sort.by(sortField).descending() : Sort.by(sortField).ascending();
 
-    // Pageable을 활용하되, Export이므로 아주 큰 값을 넣어줍니다.
     List<IndexData> dataList = indexDataRepository.findAllForExport(indexInfoId, startDate, endDate, sort);
 
     StringBuilder csv = new StringBuilder();
@@ -88,12 +111,12 @@ public class IndexDataService {
 
     for (IndexData data : dataList) {
       csv.append(data.getBaseDate()).append(",")
-              .append(data.getIndexInfo().getIndexName()).append(",")
-              .append(data.getClosingPrice()).append(",")
-              .append(data.getVersus()).append(",")
-              .append(data.getFluctuationRate()).append(",")
-              .append(data.getTradingQuantity()).append(",")
-              .append(data.getTradingPrice()).append("\n");
+          .append(data.getIndexInfo().getIndexName()).append(",")
+          .append(data.getClosingPrice() == null ? 0 : data.getClosingPrice()).append(",")
+          .append(data.getVersus() == null ? 0 : data.getVersus()).append(",")
+          .append(data.getFluctuationRate() == null ? 0 : data.getFluctuationRate()).append(",")
+          .append(data.getTradingQuantity() == null ? 0 : data.getTradingQuantity()).append(",")
+          .append(data.getTradingPrice() == null ? 0 : data.getTradingPrice()).append("\n");
     }
     return csv.toString();
   }
