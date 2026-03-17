@@ -3,7 +3,7 @@ spring:
     name: findex
 
   config:
-    import: application-key.yml
+     import: application-key.yml
 
   datasource:
     url: jdbc:postgresql://localhost:5432/findex
@@ -36,9 +36,9 @@ external:
 batch:
   sync:
     info:
-      fixed-delay: P1D
+      fixed-delay: 86400000
     enabled-index-data:
-      fixed-delay: P1D
+      fixed-delay: 86400000
 
 logging:
   level:

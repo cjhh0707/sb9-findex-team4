@@ -21,7 +21,7 @@ import lombok.*;
 @Builder
 public class IndexData extends BaseEntity {
 
-  /** IndexInfo */
+  /** 지수 정보 (부모) */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "index_info_id", nullable = false)
   private IndexInfo indexInfo;
@@ -70,4 +70,45 @@ public class IndexData extends BaseEntity {
   /** 상장 시가 총액 */
   @Column(name = "market_capitalization")
   private Long marketCapitalization;
+
+  /** 연중 최고치 */
+  @Column(name = "year_record_high_price")
+  private BigDecimal yearRecordHighPrice;
+
+  /** 연중 최고치 기록 일자 */
+  @Column(name = "year_record_high_date")
+  private String yearRecordHighDate;
+
+  /** 연중 최저치 */
+  @Column(name = "year_record_low_price")
+  private BigDecimal yearRecordLowPrice;
+
+  /** 연중 최저치 기록 일자 */
+  @Column(name = "year_record_low_date")
+  private String yearRecordLowDate;
+
+  /**
+   * [추가] 기획서에 따라 지수와 날짜를 제외한 모든 속성을 수정합니다.
+   */
+  public void update(SourceType sourceType, BigDecimal openingPrice, BigDecimal closingPrice,
+      BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
+      BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
+      Long marketCapitalization, BigDecimal yearRecordHighPrice,
+      String yearRecordHighDate, BigDecimal yearRecordLowPrice,
+      String yearRecordLowDate) {
+    this.sourceType = sourceType;
+    this.openingPrice = openingPrice;
+    this.closingPrice = closingPrice;
+    this.highPrice = highPrice;
+    this.lowPrice = lowPrice;
+    this.versus = versus;
+    this.fluctuationRate = fluctuationRate;
+    this.tradingQuantity = tradingQuantity;
+    this.tradingPrice = tradingPrice;
+    this.marketCapitalization = marketCapitalization;
+    this.yearRecordHighPrice = yearRecordHighPrice;
+    this.yearRecordHighDate = yearRecordHighDate;
+    this.yearRecordLowPrice = yearRecordLowPrice;
+    this.yearRecordLowDate = yearRecordLowDate;
+  }
 }

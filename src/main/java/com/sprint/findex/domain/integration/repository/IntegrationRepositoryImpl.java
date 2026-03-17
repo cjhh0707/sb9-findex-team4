@@ -40,7 +40,7 @@ public class IntegrationRepositoryImpl implements IntegrationRepositoryCustom {
         .fetch();
   }
 
-  // --- 동적 쿼리를 위한 BooleanExpression 조건 메서드들 ---
+  // 동적 쿼리를 위한 BooleanExpression 조건 메서드들
 
   private BooleanExpression cursorCondition(Long idAfter) {
     return idAfter != null ? integration.id.lt(idAfter) : null;
@@ -76,7 +76,7 @@ public class IntegrationRepositoryImpl implements IntegrationRepositoryCustom {
     return status != null ? integration.result.eq(status) : null;
   }
 
-  // --- 동적 정렬 조건 생성기 ---
+  // 동적 정렬 조건 생성기
   private OrderSpecifier<?> createOrderSpecifier(IntegrationSearchCondition condition) {
     String sortField = condition.getSortField();
     boolean isDesc = "desc".equalsIgnoreCase(condition.getSortDirection());
