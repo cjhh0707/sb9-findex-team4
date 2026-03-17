@@ -21,7 +21,7 @@ import lombok.*;
 @Builder
 public class IndexData extends BaseEntity {
 
-  /** IndexInfo */
+  /** 지수 정보 (부모) */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "index_info_id", nullable = false)
   private IndexInfo indexInfo;
@@ -37,7 +37,7 @@ public class IndexData extends BaseEntity {
 
   /** 시가 */
   @Column(name = "opening_price")
-  private BigDecimal openingPrice;
+  private BigDecimal marketPrice;
 
   /** 종가 */
   @Column(name = "closing_price")
@@ -69,5 +69,21 @@ public class IndexData extends BaseEntity {
 
   /** 상장 시가 총액 */
   @Column(name = "market_capitalization")
-  private Long marketCapitalization;
+  private Long marketTotalAmount;
+
+  /** 수정 */
+  public void update(BigDecimal marketPrice, BigDecimal closingPrice,
+                     BigDecimal highPrice, BigDecimal lowPrice, BigDecimal versus,
+                     BigDecimal fluctuationRate, Long tradingQuantity, Long tradingPrice,
+                     Long marketTotalAmount) {
+    this.marketPrice = marketPrice;
+    this.closingPrice = closingPrice;
+    this.highPrice = highPrice;
+    this.lowPrice = lowPrice;
+    this.versus = versus;
+    this.fluctuationRate = fluctuationRate;
+    this.tradingQuantity = tradingQuantity;
+    this.tradingPrice = tradingPrice;
+    this.marketTotalAmount = marketTotalAmount;
+  }
 }

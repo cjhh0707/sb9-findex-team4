@@ -8,10 +8,10 @@ import lombok.*;
 
 @Entity
 @Table(
-    name = "auto_integration",
-    uniqueConstraints = @UniqueConstraint(
-        columnNames = {"index_info_id"}
-    )
+        name = "auto_integration",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"index_info_id"}
+        )
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,7 +31,7 @@ public class AutoIntegration extends BaseEntity {
     this.enabled = enabled;
   }
 
-  @Column(nullable = true)
+  @Column(name = "last_integration_at", nullable = true)
   private LocalDateTime lastSyncAt;
 
 

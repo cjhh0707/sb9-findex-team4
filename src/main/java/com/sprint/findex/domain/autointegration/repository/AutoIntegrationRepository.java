@@ -28,9 +28,9 @@ AND (:idAfter IS NULL OR a.id > :idAfter)
 ORDER BY a.id ASC
 """)
   List<AutoIntegration> search(
-      Long indexInfoId,
-      Boolean enabled,
-      Long idAfter,
-      Pageable pageable
+          Long indexInfoId,
+          Boolean enabled,
+          Long idAfter,
+          Pageable pageable
   );
 }

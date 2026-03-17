@@ -12,22 +12,22 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AutoIntegrationScheduler {
 
-  private final AutoIntegrationRepository autoIntegrationRepository;
-  private final AutoIntegrationService autoIntegrationService;
+    private final AutoIntegrationRepository autoIntegrationRepository;
+    private final AutoIntegrationService autoIntegrationService;
 
-//  자동 연동 배치 작업 -> 이전 작업 끝날시 설정된 시간 뒤에 다시 실행
+    //  자동 연동 배치 작업 -> 이전 작업 끝날시 설정된 시간 뒤에 다시 실행
 //  값은 yml 에서 주입 (
-  @Scheduled(fixedDelayString = "${batch.sync.enabled-index-data.fixed-delay}")
-  public void runAutoIntegration() {
+    @Scheduled(fixedDelayString = "${batch.sync.enabled-index-data.fixed-delay}")
+    public void runAutoIntegration() {
 
-    List<AutoIntegration> targets =
-        autoIntegrationRepository.findAllByEnabled(true);
+        List<AutoIntegration> targets =
+                autoIntegrationRepository.findAllByEnabled(true);
 
-    for (AutoIntegration autoIntegration : targets) {
+        for (AutoIntegration autoIntegration : targets) {
 
-      Long id = autoIntegration.getId();
+            Long id = autoIntegration.getId();
 
-      autoIntegrationService.updateLastIntegrationDate(id, null);
+            autoIntegrationService.updateLastIntegrationDate(id, null);
+        }
     }
-  }
 }
