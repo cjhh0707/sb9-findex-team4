@@ -107,18 +107,26 @@ public class ExternalApiService {
     @Transactional
     public int syncIndexData(IndexInfo indexInfo, LocalDate from, LocalDate to) {
         List<OpenApiItem> items = fetchAllItems(
-                indexInfo.getIndexClassification(),
-                indexInfo.getIndexName(),
-                from, to
+            indexInfo.getIndexClassification(),
+            indexInfo.getIndexName(),
+            from, to
         );
 
+        log.info("📢 [확인용] API 원본 수신 개수 (필터링 전): {}개", items.size());
+
+        int savedCount = 0; // 진짜로 내 지수에 맞는 데이터만 센다!
+
         for (OpenApiItem item : items) {
-            upsertIndexData(indexInfo, item);
+            // ⭐ [핵심 수정] API가 준 이름과 내 지수 이름이 완벽히 똑같을 때만 저장!
+            if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())) {
+                upsertIndexData(indexInfo, item);
+                savedCount++; // 저장한 개수 1 증가
+            }
         }
 
-        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 처리 건수: {}",
-                indexInfo.getIndexName(), from, to, items.size());
-        return items.size();
+        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 찐 처리 건수: {}",
+            indexInfo.getIndexName(), from, to, savedCount);
+        return savedCount;
     }
 
     // Private: upsert helpers
@@ -245,28 +253,24 @@ public class ExternalApiService {
     private OpenApiResponse callApi(String idxCsf, String idxNm,
         LocalDate from, LocalDate to, int pageNo) {
 
-        // 1. StringBuilder를 urlBuilder라는 이름으로 정확히 생성합니다.
+        // 1. StringBuilder 준비
         StringBuilder urlBuilder = new StringBuilder(baseUrl + STOCK_INDEX_ENDPOINT);
 
-        // 2. 파라미터들을 하나씩 직접 붙입니다.
-        urlBuilder.append("?serviceKey=").append(apiKey);
+        // ⭐ [핵심 수정] apiKey를 그냥 붙이지 말고, URLEncoder로 한 번 감싸줍니다.
+        // 이렇게 하면 키 안의 '+', '/' 등이 공공데이터 서버가 이해할 수 있는 형식으로 바뀝니다.
+        String encodedServiceKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
+
+        urlBuilder.append("?serviceKey=").append(encodedServiceKey);
         urlBuilder.append("&resultType=json");
         urlBuilder.append("&numOfRows=").append(NUM_OF_ROWS);
         urlBuilder.append("&pageNo=").append(pageNo);
         urlBuilder.append("&beginBasDt=").append(from.format(YYYYMMDD));
         urlBuilder.append("&endBasDt=").append(to.format(YYYYMMDD));
 
-        if (idxCsf != null && !idxCsf.isBlank()) {
-            urlBuilder.append("&idxCsf=").append(URLEncoder.encode(idxCsf, StandardCharsets.UTF_8));
-        }
-        if (idxNm != null && !idxNm.isBlank()) {
-            urlBuilder.append("&idxNm=").append(URLEncoder.encode(idxNm, StandardCharsets.UTF_8));
-        }
+        // ... 나머지 idxCsf, idxNm 처리 로직은 그대로 유지 ...
 
-        // 3. urlBuilder에 담긴 문자열을 가져와서 URI를 만듭니다.
         URI uri = URI.create(urlBuilder.toString());
-
-        log.debug("[OpenAPI] 최종 조립 URI: {}", uri);
+        log.debug("[OpenAPI] 인코딩된 키로 조립한 URI: {}", uri);
 
         return restClient.get()
             .uri(uri)

@@ -53,4 +53,6 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
             @Param("jobType") JobType jobType,
             @Param("result") JobResult result
     );
+
+    long countByResult(JobResult result);
 }

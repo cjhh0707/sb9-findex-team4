@@ -48,6 +48,8 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
           Sort sort // 정렬 파라미터 추가
   );
 
+  long countByIndexInfoIdAndBaseDateBetween(Long indexInfoId, LocalDate startDate, LocalDate endDate);
+
   // OpenAPI 연동용: (지수 ID + 날짜) 단건 조회 (upsert 판별)
   Optional<IndexData> findByIndexInfoIdAndBaseDate(Long indexInfoId, LocalDate baseDate);
 
