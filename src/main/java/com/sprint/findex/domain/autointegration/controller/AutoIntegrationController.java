@@ -27,7 +27,7 @@ public class AutoIntegrationController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "indexInfo.indexName") String sortField,
             @RequestParam(defaultValue = "asc") String sortDirection,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "200") int size
     ) {
         return ResponseEntity.ok(autoIntegrationService.getAutoSyncConfigs(
                 indexInfoId, enabled, idAfter, cursor, sortField, sortDirection, size));

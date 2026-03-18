@@ -28,11 +28,11 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
           AND (:idAfter IS NULL OR i.id > :idAfter)
         """)
   List<IndexInfo> searchIndexInfos(
-      @Param("indexClassification") String indexClassification,
-      @Param("indexName") String indexName,
-      @Param("favorite") Boolean favorite,
-      @Param("idAfter") Long idAfter,
-      Pageable pageable
+          @Param("indexClassification") String indexClassification,
+          @Param("indexName") String indexName,
+          @Param("favorite") Boolean favorite,
+          @Param("idAfter") Long idAfter,
+          Pageable pageable
   );
   @Query("""
         SELECT COUNT(i) FROM IndexInfo i
@@ -41,11 +41,12 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
           AND (:favorite IS NULL OR i.favorite = :favorite)
         """)
   long countIndexInfos(
-      @Param("indexClassification") String indexClassification,
-      @Param("indexName") String indexName,
-      @Param("favorite") Boolean favorite
+          @Param("indexClassification") String indexClassification,
+          @Param("indexName") String indexName,
+          @Param("favorite") Boolean favorite
   );
 
+  /**지수 분류명과 지수명으로 중복 여부를 확인하는 기본 제공 메서드(등록 시 유효성 검사용)*/
   boolean existsByIndexClassificationAndIndexName(String indexClassification, String indexName);
 
   //대시보드(관심 지수 성과 조회)를 위한 추가 메서드
@@ -53,4 +54,5 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
 
   // OpenAPI 연동: 분류명 + 지수명으로 단건 조회
   Optional<IndexInfo> findByIndexClassificationAndIndexName(String indexClassification, String indexName);
+
 }

@@ -107,9 +107,9 @@ public class ExternalApiService {
     @Transactional
     public int syncIndexData(IndexInfo indexInfo, LocalDate from, LocalDate to) {
         List<OpenApiItem> items = fetchAllItems(
-            indexInfo.getIndexClassification(),
-            indexInfo.getIndexName(),
-            from, to
+                indexInfo.getIndexClassification(),
+                indexInfo.getIndexName(),
+                from, to
         );
 
         log.info("📢 [확인용] API 원본 수신 개수 (필터링 전): {}개", items.size());
@@ -117,7 +117,6 @@ public class ExternalApiService {
         int savedCount = 0; // 진짜로 내 지수에 맞는 데이터만 센다!
 
         for (OpenApiItem item : items) {
-            // ⭐ [핵심 수정] API가 준 이름과 내 지수 이름이 완벽히 똑같을 때만 저장!
             if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())) {
                 upsertIndexData(indexInfo, item);
                 savedCount++; // 저장한 개수 1 증가
@@ -125,7 +124,7 @@ public class ExternalApiService {
         }
 
         log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 찐 처리 건수: {}",
-            indexInfo.getIndexName(), from, to, savedCount);
+                indexInfo.getIndexName(), from, to, savedCount);
         return savedCount;
     }
 
@@ -251,13 +250,11 @@ public class ExternalApiService {
     }
 
     private OpenApiResponse callApi(String idxCsf, String idxNm,
-        LocalDate from, LocalDate to, int pageNo) {
+                                    LocalDate from, LocalDate to, int pageNo) {
 
         // 1. StringBuilder 준비
         StringBuilder urlBuilder = new StringBuilder(baseUrl + STOCK_INDEX_ENDPOINT);
 
-        // ⭐ [핵심 수정] apiKey를 그냥 붙이지 말고, URLEncoder로 한 번 감싸줍니다.
-        // 이렇게 하면 키 안의 '+', '/' 등이 공공데이터 서버가 이해할 수 있는 형식으로 바뀝니다.
         String encodedServiceKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
 
         urlBuilder.append("?serviceKey=").append(encodedServiceKey);
@@ -267,15 +264,13 @@ public class ExternalApiService {
         urlBuilder.append("&beginBasDt=").append(from.format(YYYYMMDD));
         urlBuilder.append("&endBasDt=").append(to.format(YYYYMMDD));
 
-        // ... 나머지 idxCsf, idxNm 처리 로직은 그대로 유지 ...
-
         URI uri = URI.create(urlBuilder.toString());
         log.debug("[OpenAPI] 인코딩된 키로 조립한 URI: {}", uri);
 
         return restClient.get()
-            .uri(uri)
-            .retrieve()
-            .body(OpenApiResponse.class);
+                .uri(uri)
+                .retrieve()
+                .body(OpenApiResponse.class);
     }
 
     // Private: 파싱 헬퍼

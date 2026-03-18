@@ -6,6 +6,7 @@ import com.sprint.findex.domain.dashboard.dto.response.IndexChartDto;
 import com.sprint.findex.domain.dashboard.dto.response.IndexPerformanceDto;
 import com.sprint.findex.domain.dashboard.dto.response.RankedIndexPerformanceDto;
 import com.sprint.findex.domain.dashboard.service.DashboardService;
+import com.sprint.findex.domain.dashboard.service.basic.BasicDashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,34 +16,36 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/index-data")
-@RequiredArgsConstructor
-@Tag(name = "지수 데이터 API", description = "지수 데이터 관리 API")
+@RequestMapping("/api")
 public class DashboardController {
 
-    private final DashboardService dashboardService;
+    private final BasicDashboardService basicDashboardService;
 
-    @GetMapping("/performance/favorite")
-    @Operation(summary = "관심 지수 성과 조회", description = "즐겨찾기로 등록된 지수들의 성과를 조회합니다.")
-    public ResponseEntity<List<IndexPerformanceDto>> getFavoritePerformance(
-            @RequestParam(required = false, defaultValue = "DAILY") PeriodType periodType) {
-        return ResponseEntity.ok(dashboardService.getFavoritePerformance(periodType));
+    public DashboardController(BasicDashboardService basicDashboardService) {
+        this.basicDashboardService = basicDashboardService;
     }
 
-    @GetMapping("/{id}/chart")
-    @Operation(summary = "지수 차트 조회", description = "지수의 차트 데이터를 조회합니다.")
-    public ResponseEntity<IndexChartDto> getChart(
-            @PathVariable("id") Long id,
-            @RequestParam(required = false, defaultValue = "MONTHLY") ChartPeriodType periodType) {
-        return ResponseEntity.ok(dashboardService.getChart(id, periodType));
+    /** 즐겨찾기로 등록된 지수들의 성과를 조회합니다. (1번째 부분 - 주요 지수) */
+    @GetMapping("/index-data/performance/favorite")
+    public List<IndexPerformanceDto> getFavPerformance(@RequestParam("periodType") PeriodType periodType) {
+        return basicDashboardService.getFavoritePerformance(periodType);
     }
 
-    @GetMapping("/performance/rank")
-    @Operation(summary = "지수 성과 랭킹 조회", description = "지수의 성과 분석 랭킹을 조회합니다.")
-    public ResponseEntity<List<RankedIndexPerformanceDto>> getPerformanceRank(
-            @RequestParam(required = false) Long indexInfoId,
-            @RequestParam(required = false, defaultValue = "DAILY") PeriodType periodType,
-            @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(dashboardService.getPerformanceRank(indexInfoId, periodType, limit));
+    /** 지정된 지수 ID와 기간 유형에 해당하는 차트 데이터를 조회합니다. (2번째 부분 - 지수 차트) */
+    @GetMapping("/index-data/{id}/chart")
+    public IndexChartDto getChart(
+            @PathVariable("id") long id, @RequestParam("periodType") ChartPeriodType periodType) {
+        return basicDashboardService.getChart(id, periodType);
+    }
+
+    /**
+     * 특정 지수 정보를 기준으로 성과 순위를 조회합니다. 이 메소드는 주어진 기간과 제한된 수량에 따라 지수들의 성과 순위 목록을 반환합니다. (3번째 부분 - 지수 성과)
+     */
+    @GetMapping("/index-data/performance/rank")
+    public List<RankedIndexPerformanceDto> getPerformanceRank(
+            @RequestParam(name = "indexInfoId", required = false) Long indexInfoId,
+            @RequestParam("periodType") PeriodType periodType,
+            @RequestParam("limit") int limit) {
+        return basicDashboardService.getPerformanceRank(indexInfoId, periodType, limit);
     }
 }

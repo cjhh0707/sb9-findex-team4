@@ -3,6 +3,7 @@ package com.sprint.findex.domain.autointegration.repository;
 import com.sprint.findex.domain.autointegration.entity.AutoIntegration;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -15,8 +16,8 @@ public interface AutoIntegrationRepository extends JpaRepository<AutoIntegration
   // indexId 조회용
   Optional<AutoIntegration> findByIndexInfoId(Long indexInfoId);
 
-  // 활성화(enabled) 상태 필터링
-  // 예시: findAllByEnabled(true)
+  // 활성화(enabled) 상태 필터링 + indexInfo Eager 로딩 (스케줄러 LazyLoad 방지)
+  @EntityGraph(attributePaths = {"indexInfo"})
   java.util.List<AutoIntegration> findAllByEnabled(boolean enabled);
 
   @Query("""

@@ -39,6 +39,32 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
             Pageable pageable
     );
 
+    // ... 기존 searchIntegrations 메서드 바로 아래에 추가하세요 ...
+
+    /**
+     * ⭐ [현하님을 위한 추가] 상단 대시보드 통계용 카운트 쿼리
+     * searchIntegrations와 동일한 조건을 필터링하여 전체 개수를 계산합니다.
+     */
+    @Query("SELECT COUNT(i) FROM Integration i " +
+            "WHERE (:jobType IS NULL OR i.jobType = :jobType) " +
+            "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
+            "AND (CAST(:baseDateFrom AS date) IS NULL OR i.targetDate >= :baseDateFrom) " +
+            "AND (CAST(:baseDateTo AS date) IS NULL OR i.targetDate <= :baseDateTo) " +
+            "AND (:worker IS NULL OR i.worker LIKE %:worker%) " +
+            "AND (CAST(:jobTimeFrom AS timestamp) IS NULL OR i.jobTime >= :jobTimeFrom) " +
+            "AND (CAST(:jobTimeTo AS timestamp) IS NULL OR i.jobTime <= :jobTimeTo) " +
+            "AND (:result IS NULL OR i.result = :result)")
+    long countIntegrations(
+            @Param("jobType") JobType jobType,
+            @Param("indexInfoId") Long indexInfoId,
+            @Param("baseDateFrom") LocalDate baseDateFrom,
+            @Param("baseDateTo") LocalDate baseDateTo,
+            @Param("worker") String worker,
+            @Param("jobTimeFrom") LocalDateTime jobTimeFrom,
+            @Param("jobTimeTo") LocalDateTime jobTimeTo,
+            @Param("result") JobResult result
+    );
+
     /**
      * 자동 연동 스케줄러용: 특정 지수의 마지막 성공 targetDate 조회
      * worker="system" 조건으로 배치 실행 기록만 필터링
@@ -55,4 +81,5 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
     );
 
     long countByResult(JobResult result);
+
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class IndexInfoService {
@@ -24,20 +25,20 @@ public class IndexInfoService {
   public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request) {
     //중복 검증
     if (indexInfoRepository.existsByIndexClassificationAndIndexName(
-        request.indexClassification(), request.indexName())) {
+            request.indexClassification(), request.indexName())) {
       throw new IllegalArgumentException("이미 등록된 지수 분류명과 지수명 조합입니다.");
     }
 
     //DTO -> Entity
     IndexInfo indexInfo = IndexInfo.builder()
-        .indexClassification(request.indexClassification())
-        .indexName(request.indexName())
-        .employedItemsCount(request.employedItemsCount())
-        .basePointInTime(request.basePointInTime())
-        .baseIndex(request.baseIndex())
-        .sourceType(SourceType.USER)
-        .favorite(request.favorite() != null ? request.favorite() : false)
-        .build();
+            .indexClassification(request.indexClassification())
+            .indexName(request.indexName())
+            .employedItemsCount(request.employedItemsCount())
+            .basePointInTime(request.basePointInTime())
+            .baseIndex(request.baseIndex())
+            .sourceType(SourceType.USER)
+            .favorite(request.favorite() != null ? request.favorite() : false)
+            .build();
 
     IndexInfo savedIndexInfo = indexInfoRepository.save(indexInfo);
 
@@ -51,19 +52,19 @@ public class IndexInfoService {
   @Transactional
   public IndexInfoResponse getIndexInfo(Long id) {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
     return IndexInfoResponse.from(indexInfo);
   }
 
   @Transactional
   public IndexInfoResponse updateIndexInfo(Long id, IndexInfoUpdateRequest request) {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
 
     indexInfo.updateInfo(
-        request.employedItemsCount(),
-        request.basePointInTime(),
-        request.baseIndex()
+            request.employedItemsCount(),
+            request.basePointInTime(),
+            request.baseIndex()
     );
     indexInfo.updateFavorite(request.favorite());
 
@@ -73,7 +74,7 @@ public class IndexInfoService {
   @Transactional
   public void deleteIndexInfo(Long id) {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
+            .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
     indexInfoRepository.delete(indexInfo);
   }
 
@@ -90,47 +91,47 @@ public class IndexInfoService {
     Pageable pageable = PageRequest.of(0, size + 1, sort);
 
     List<IndexInfo> indexInfos = indexInfoRepository.searchIndexInfos(
-        condition.indexClassification(),
-        condition.indexName(),
-        condition.favorite(),
-        idAfter,
-        pageable
+            condition.indexClassification(),
+            condition.indexName(),
+            condition.favorite(),
+            idAfter,
+            pageable
     );
 
     boolean hasNext = indexInfos.size() > size;
 
     List<IndexInfoResponse> content = indexInfos.stream()
-        .limit(size)
-        .map(IndexInfoResponse::from)
-        .toList();
+            .limit(size)
+            .map(IndexInfoResponse::from)
+            .toList();
 
     Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
 
     long totalElements = indexInfoRepository.countIndexInfos(
-        condition.indexClassification(),
-        condition.indexName(),
-        condition.favorite()
+            condition.indexClassification(),
+            condition.indexName(),
+            condition.favorite()
     );
 
     return new CursorPageResponse<>(
-        content,
-        nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
-        nextIdAfter,
-        size,
-        totalElements,
-        hasNext
+            content,
+            nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
+            nextIdAfter,
+            size,
+            totalElements,
+            hasNext
     );
   }
 
   @Transactional(readOnly = true)
   public List<IndexInfoSummaryDto> getIndexInfoSummaries() {
     return indexInfoRepository.findAll().stream()
-        .map(info -> new IndexInfoSummaryDto(
-            info.getId(),
-            info.getIndexClassification(),
-            info.getIndexName()
-        ))
-        .toList();
+            .map(info -> new IndexInfoSummaryDto(
+                    info.getId(),
+                    info.getIndexClassification(),
+                    info.getIndexName()
+            ))
+            .toList();
   }
 
 }

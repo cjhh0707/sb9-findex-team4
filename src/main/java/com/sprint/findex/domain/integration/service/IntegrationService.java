@@ -53,34 +53,53 @@ public class IntegrationService {
         String sortField = condition.getSortField() != null ? condition.getSortField() : "jobTime";
         String sortDirection = condition.getSortDirection() != null ? condition.getSortDirection() : "desc";
         Sort sort = sortDirection.equalsIgnoreCase("desc")
-            ? Sort.by(sortField).descending()
-            : Sort.by(sortField).ascending();
+                ? Sort.by(sortField).descending()
+                : Sort.by(sortField).ascending();
 
         Pageable pageable = PageRequest.of(0, size + 1, sort);
 
         List<Integration> integrations = integrationRepository.searchIntegrations(
-            condition.getIdAfter(),
-            condition.getJobType(),
-            condition.getIndexInfoId(),
-            condition.getBaseDateFrom(),
-            condition.getBaseDateTo(),
-            condition.getWorker(),
-            condition.getJobTimeFrom(),
-            condition.getJobTimeTo(),
-            jobResult,
-            pageable
+                condition.getIdAfter(),
+                condition.getJobType(),
+                condition.getIndexInfoId(),
+                condition.getBaseDateFrom(),
+                condition.getBaseDateTo(),
+                condition.getWorker(),
+                condition.getJobTimeFrom(),
+                condition.getJobTimeTo(),
+                jobResult,
+                pageable
         );
 
         boolean hasNext = integrations.size() > size;
 
         List<IntegrationResponse> content = integrationMapper.toResponseList(
-            integrations.stream().limit(size).toList()
+                integrations.stream().limit(size).toList()
         );
 
         Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).getId();
 
-        // ⭐ [수정] 다섯 번째 인자(totalElements)를 null 대신 0L로 변경하여 프론트엔드 에러 방지
-        return new CursorPageResponse<>(content, nextIdAfter != null ? String.valueOf(nextIdAfter) : null, nextIdAfter, size, 0L, hasNext);
+        // ⭐ [수정 핵심] 상단 통계 수치를 위해 실제 데이터 개수를 카운트합니다.
+        long totalElements = integrationRepository.countIntegrations(
+                condition.getJobType(),
+                condition.getIndexInfoId(),
+                condition.getBaseDateFrom(),
+                condition.getBaseDateTo(),
+                condition.getWorker(),
+                condition.getJobTimeFrom(),
+                condition.getJobTimeTo(),
+                jobResult
+        );
+
+        // 0L 대신 totalElements를 넘겨줘야 화면 상단 숫자가 올라갑니다!
+        return new CursorPageResponse<>(
+                content,
+                nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
+                nextIdAfter,
+                size,
+                totalElements,
+                hasNext
+        );
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -95,10 +114,10 @@ public class IntegrationService {
 
         // 지수별 이력 생성 (요구사항: "대상 지수가 여러 개인 경우 지수 별로 이력을 등록")
         List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
-            integrationRepository.save(
-                integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
-                    LocalDate.now(), workerIp, JobResult.NEW)
-            )
+                integrationRepository.save(
+                        integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
+                                LocalDate.now(), workerIp, JobResult.NEW)
+                )
         ).toList();
 
         // syncIndexInfo()는 단 한 번만 실행 (DB가 비어 있어도 실행)
@@ -134,7 +153,7 @@ public class IntegrationService {
     private void updateJobResults(List<Long> jobIds, JobResult result) {
         for (Long jobId : jobIds) {
             integrationRepository.findById(jobId)
-                .ifPresent(job -> job.updateResult(result));
+                    .ifPresent(job -> job.updateResult(result));
         }
     }
 
@@ -145,7 +164,7 @@ public class IntegrationService {
     @Transactional
     public List<IntegrationResponse> createIndexDataSyncJob(IntegrationSyncRequest request, String workerIp) {
         log.info("[지수 데이터 연동 요청 접수] 작업자 IP: {}, 기간: {} ~ {}",
-            workerIp, request.getBaseDateFrom(), request.getBaseDateTo());
+                workerIp, request.getBaseDateFrom(), request.getBaseDateTo());
 
         List<IndexInfo> targetInfos;
         List<Long> ids = request.getIndexInfoIds();
@@ -159,10 +178,10 @@ public class IntegrationService {
 
         // 지수별로 Integration 이력 생성 (요구사항: "지수, 날짜 별로 이력을 등록")
         List<Integration> savedJobs = targetInfos.stream().map(indexInfo ->
-            integrationRepository.save(
-                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA,
-                    targetDate, workerIp, JobResult.NEW)
-            )
+                integrationRepository.save(
+                        integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA,
+                                targetDate, workerIp, JobResult.NEW)
+                )
         ).toList();
 
         savedJobs.forEach(job -> this.executeIndexDataSyncInBackground(job.getId(), request));
@@ -174,7 +193,7 @@ public class IntegrationService {
     @Transactional
     public void executeIndexDataSyncInBackground(Long jobId, IntegrationSyncRequest request) {
         log.info("[비동기] 지수 데이터 연동 시작. Job ID: {}, 기간: {} ~ {}",
-            jobId, request.getBaseDateFrom(), request.getBaseDateTo());
+                jobId, request.getBaseDateFrom(), request.getBaseDateTo());
 
         integrationRepository.findById(jobId).ifPresent(job -> {
             try {
@@ -201,7 +220,7 @@ public class IntegrationService {
         log.info("[배치 연동] 지수: {}, 기간: {} ~ {}", indexInfo.getIndexName(), from, to);
 
         Integration job = integrationRepository.save(
-            integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
+                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
         );
 
         try {

@@ -37,7 +37,7 @@ public class IndexDataController {
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "baseDate") String sortField,
       @RequestParam(defaultValue = "desc") String sortDirection,
-      @RequestParam(defaultValue = "200") int size) {
+      @RequestParam(defaultValue = "1000") int size) {
 
     // [수정 부분] cursor와 idAfter 중 있는 값을 안전하게 선택
     Long finalIdAfter = idAfter;
