@@ -123,8 +123,10 @@ public class ExternalApiService {
             }
         }
 
-        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 찐 처리 건수: {}",
-                indexInfo.getIndexName(), from, to, savedCount);
+//        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 찐 처리 건수: {}",
+//                indexInfo.getIndexName(), from, to, savedCount);
+//        return savedCount;
+        // ⭐ 바로 여기에 이 한 줄을 추가하세요!
         return savedCount;
     }
 

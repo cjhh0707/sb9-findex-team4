@@ -17,26 +17,26 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
 
     // QueryDSL을 대체하는 순수 JPQL 동적 쿼리
     @Query("SELECT i FROM Integration i " +
-            "WHERE (:idAfter IS NULL OR i.id < :idAfter) " +
-            "AND (:jobType IS NULL OR i.jobType = :jobType) " +
-            "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
-            "AND (CAST(:baseDateFrom AS date) IS NULL OR i.targetDate >= :baseDateFrom) " +
-            "AND (CAST(:baseDateTo AS date) IS NULL OR i.targetDate <= :baseDateTo) " +
-            "AND (:worker IS NULL OR i.worker LIKE %:worker%) " +
-            "AND (CAST(:jobTimeFrom AS timestamp) IS NULL OR i.jobTime >= :jobTimeFrom) " +
-            "AND (CAST(:jobTimeTo AS timestamp) IS NULL OR i.jobTime <= :jobTimeTo) " +
-            "AND (:result IS NULL OR i.result = :result)")
+        "WHERE (:idAfter IS NULL OR i.id < :idAfter) " +
+        "AND (:jobType IS NULL OR i.jobType = :jobType) " +
+        "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
+        "AND (CAST(:baseDateFrom AS date) IS NULL OR i.targetDate >= :baseDateFrom) " +
+        "AND (CAST(:baseDateTo AS date) IS NULL OR i.targetDate <= :baseDateTo) " +
+        "AND (:worker IS NULL OR i.worker LIKE %:worker%) " +
+        "AND (CAST(:jobTimeFrom AS timestamp) IS NULL OR i.jobTime >= :jobTimeFrom) " +
+        "AND (CAST(:jobTimeTo AS timestamp) IS NULL OR i.jobTime <= :jobTimeTo) " +
+        "AND (:result IS NULL OR i.result = :result)")
     List<Integration> searchIntegrations(
-            @Param("idAfter") Long idAfter,
-            @Param("jobType") JobType jobType,
-            @Param("indexInfoId") Long indexInfoId,
-            @Param("baseDateFrom") LocalDate baseDateFrom,
-            @Param("baseDateTo") LocalDate baseDateTo,
-            @Param("worker") String worker,
-            @Param("jobTimeFrom") LocalDateTime jobTimeFrom,
-            @Param("jobTimeTo") LocalDateTime jobTimeTo,
-            @Param("result") JobResult result,
-            Pageable pageable
+        @Param("idAfter") Long idAfter,
+        @Param("jobType") JobType jobType,
+        @Param("indexInfoId") Long indexInfoId,
+        @Param("baseDateFrom") LocalDate baseDateFrom,
+        @Param("baseDateTo") LocalDate baseDateTo,
+        @Param("worker") String worker,
+        @Param("jobTimeFrom") LocalDateTime jobTimeFrom,
+        @Param("jobTimeTo") LocalDateTime jobTimeTo,
+        @Param("result") JobResult result,
+        Pageable pageable
     );
 
     // ... 기존 searchIntegrations 메서드 바로 아래에 추가하세요 ...
@@ -46,23 +46,31 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
      * searchIntegrations와 동일한 조건을 필터링하여 전체 개수를 계산합니다.
      */
     @Query("SELECT COUNT(i) FROM Integration i " +
-            "WHERE (:jobType IS NULL OR i.jobType = :jobType) " +
-            "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
-            "AND (CAST(:baseDateFrom AS date) IS NULL OR i.targetDate >= :baseDateFrom) " +
-            "AND (CAST(:baseDateTo AS date) IS NULL OR i.targetDate <= :baseDateTo) " +
-            "AND (:worker IS NULL OR i.worker LIKE %:worker%) " +
-            "AND (CAST(:jobTimeFrom AS timestamp) IS NULL OR i.jobTime >= :jobTimeFrom) " +
-            "AND (CAST(:jobTimeTo AS timestamp) IS NULL OR i.jobTime <= :jobTimeTo) " +
-            "AND (:result IS NULL OR i.result = :result)")
+        "WHERE (:jobType IS NULL OR i.jobType = :jobType) " +
+        "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
+        "AND (CAST(:baseDateFrom AS date) IS NULL OR i.targetDate >= :baseDateFrom) " +
+        "AND (CAST(:baseDateTo AS date) IS NULL OR i.targetDate <= :baseDateTo) " +
+        "AND (:worker IS NULL OR i.worker LIKE %:worker%) " +
+        "AND (CAST(:jobTimeFrom AS timestamp) IS NULL OR i.jobTime >= :jobTimeFrom) " +
+        "AND (CAST(:jobTimeTo AS timestamp) IS NULL OR i.jobTime <= :jobTimeTo) " +
+        "AND (:result IS NULL OR i.result = :result)")
     long countIntegrations(
-            @Param("jobType") JobType jobType,
-            @Param("indexInfoId") Long indexInfoId,
-            @Param("baseDateFrom") LocalDate baseDateFrom,
-            @Param("baseDateTo") LocalDate baseDateTo,
-            @Param("worker") String worker,
-            @Param("jobTimeFrom") LocalDateTime jobTimeFrom,
-            @Param("jobTimeTo") LocalDateTime jobTimeTo,
-            @Param("result") JobResult result
+        @Param("jobType") JobType jobType,
+        @Param("indexInfoId") Long indexInfoId,
+        @Param("baseDateFrom") LocalDate baseDateFrom,
+        @Param("baseDateTo") LocalDate baseDateTo,
+        @Param("worker") String worker,
+        @Param("jobTimeFrom") LocalDateTime jobTimeFrom,
+        @Param("jobTimeTo") LocalDateTime jobTimeTo,
+        @Param("result") JobResult result
+    );
+    // ⭐
+    @Query("SELECT COALESCE(SUM(i.processedCount), 0) FROM Integration i " +
+        "WHERE (:result IS NULL OR i.result = :result) " +
+        "AND (:jobType IS NULL OR i.jobType = :jobType)")
+    long sumProcessedCount(
+        @Param("result") JobResult result,
+        @Param("jobType") JobType jobType
     );
 
     /**
@@ -70,14 +78,14 @@ public interface IntegrationRepository extends JpaRepository<Integration, Long> 
      * worker="system" 조건으로 배치 실행 기록만 필터링
      */
     @Query("SELECT MAX(i.targetDate) FROM Integration i " +
-            "WHERE i.indexInfo.id = :indexInfoId " +
-            "AND i.jobType = :jobType " +
-            "AND i.worker = 'system' " +
-            "AND i.result = :result")
+        "WHERE i.indexInfo.id = :indexInfoId " +
+        "AND i.jobType = :jobType " +
+        "AND i.worker = 'system' " +
+        "AND i.result = :result")
     Optional<LocalDate> findLastSuccessTargetDate(
-            @Param("indexInfoId") Long indexInfoId,
-            @Param("jobType") JobType jobType,
-            @Param("result") JobResult result
+        @Param("indexInfoId") Long indexInfoId,
+        @Param("jobType") JobType jobType,
+        @Param("result") JobResult result
     );
 
     long countByResult(JobResult result);

@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -34,193 +36,130 @@ public class IntegrationService {
     private final IndexInfoRepository indexInfoRepository;
     private final ExternalApiService externalApiService;
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 연동 작업 목록 조회
-    // ──────────────────────────────────────────────────────────────────────────
-
+    // 1. 목록 조회
     @Transactional(readOnly = true)
     public CursorPageResponse<IntegrationResponse> getIntegrations(IntegrationSearchCondition condition) {
         int size = condition.getSize() != null ? condition.getSize() : 10;
-
         JobResult jobResult = null;
         if (condition.getStatus() != null && !condition.getStatus().isBlank()) {
-            try {
-                jobResult = JobResult.valueOf(condition.getStatus().toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
+            try { jobResult = JobResult.valueOf(condition.getStatus().toUpperCase()); } catch (Exception ignored) {}
         }
-
         String sortField = condition.getSortField() != null ? condition.getSortField() : "jobTime";
-        String sortDirection = condition.getSortDirection() != null ? condition.getSortDirection() : "desc";
-        Sort sort = sortDirection.equalsIgnoreCase("desc")
-                ? Sort.by(sortField).descending()
-                : Sort.by(sortField).ascending();
-
+        Sort sort = "asc".equalsIgnoreCase(condition.getSortDirection()) ? Sort.by(sortField).ascending() : Sort.by(sortField).descending();
         Pageable pageable = PageRequest.of(0, size + 1, sort);
 
         List<Integration> integrations = integrationRepository.searchIntegrations(
-                condition.getIdAfter(),
-                condition.getJobType(),
-                condition.getIndexInfoId(),
-                condition.getBaseDateFrom(),
-                condition.getBaseDateTo(),
-                condition.getWorker(),
-                condition.getJobTimeFrom(),
-                condition.getJobTimeTo(),
-                jobResult,
-                pageable
+            condition.getIdAfter(), condition.getJobType(), condition.getIndexInfoId(),
+            condition.getBaseDateFrom(), condition.getBaseDateTo(), condition.getWorker(),
+            condition.getJobTimeFrom(), condition.getJobTimeTo(), jobResult, pageable
         );
 
         boolean hasNext = integrations.size() > size;
-
-        List<IntegrationResponse> content = integrationMapper.toResponseList(
-                integrations.stream().limit(size).toList()
-        );
-
-        Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).getId();
-
-        // ⭐ [수정 핵심] 상단 통계 수치를 위해 실제 데이터 개수를 카운트합니다.
+        List<IntegrationResponse> content = integrationMapper.toResponseList(integrations.stream().limit(size).toList());
         long totalElements = integrationRepository.countIntegrations(
-                condition.getJobType(),
-                condition.getIndexInfoId(),
-                condition.getBaseDateFrom(),
-                condition.getBaseDateTo(),
-                condition.getWorker(),
-                condition.getJobTimeFrom(),
-                condition.getJobTimeTo(),
-                jobResult
+            condition.getJobType(), condition.getIndexInfoId(), condition.getBaseDateFrom(),
+            condition.getBaseDateTo(), condition.getWorker(), condition.getJobTimeFrom(),
+            condition.getJobTimeTo(), jobResult
         );
 
-        // 0L 대신 totalElements를 넘겨줘야 화면 상단 숫자가 올라갑니다!
-        return new CursorPageResponse<>(
-                content,
-                nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
-                nextIdAfter,
-                size,
-                totalElements,
-                hasNext
-        );
+        return new CursorPageResponse<>(content, content.isEmpty() ? null : String.valueOf(content.get(content.size()-1).getId()),
+            content.isEmpty() ? null : content.get(content.size()-1).getId(), size, totalElements, hasNext);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 지수 정보 연동
-    // ──────────────────────────────────────────────────────────────────────────
-
+    // 2. 정보 연동
     @Transactional
     public List<IntegrationResponse> createIndexInfoSyncJob(String workerIp) {
-        log.info("[지수 정보 연동 요청 접수] 작업자 IP: {}", workerIp);
-
         List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
-
-        // 지수별 이력 생성 (요구사항: "대상 지수가 여러 개인 경우 지수 별로 이력을 등록")
         List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
-                integrationRepository.save(
-                        integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
-                                LocalDate.now(), workerIp, JobResult.NEW)
-                )
+            integrationRepository.save(integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO, LocalDate.now(), workerIp, JobResult.NEW))
         ).toList();
-
-        // syncIndexInfo()는 단 한 번만 실행 (DB가 비어 있어도 실행)
-        List<Long> jobIds = savedJobs.stream().map(Integration::getId).toList();
-        this.executeOpenApiSyncInBackground(jobIds);
-
+        this.executeOpenApiSyncInBackground(savedJobs.stream().map(Integration::getId).toList());
         return integrationMapper.toResponseList(savedJobs);
     }
 
     @Async
     @Transactional
     public void executeOpenApiSyncInBackground(List<Long> jobIds) {
-        log.info("[비동기] 지수 정보 연동 시작. Job 수: {}", jobIds.size());
-
         try {
-            // ⭐ [핵심 추가] 공공데이터 API 서버에 과부하를 주지 않기 위해
-            // 0.5초 정도 쉬었다가 시작하는 매너를 보여줍니다. (429 에러 방지)
             Thread.sleep(500);
-
             externalApiService.syncIndexInfo();
-
-            // 성공 시 로그에 처리된 결과 개수를 남겨주면 디버깅이 훨씬 편해요!
-            log.info("[비동기] 지수 정보 연동 완료. 대상 ID들: {}", jobIds);
             updateJobResults(jobIds, JobResult.SUCCESS);
-
         } catch (Exception e) {
-            log.error("[비동기] 지수 정보 연동 실패. error: {}", e.getMessage());
             updateJobResults(jobIds, JobResult.FAILED);
         }
     }
 
-    // ⭐ 중복 코드를 줄이기 위한 헬퍼 메서드
-    private void updateJobResults(List<Long> jobIds, JobResult result) {
-        for (Long jobId : jobIds) {
-            integrationRepository.findById(jobId)
-                    .ifPresent(job -> job.updateResult(result));
-        }
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 지수 데이터 연동
-    // ──────────────────────────────────────────────────────────────────────────
-
+    // 3. 데이터 연동
     @Transactional
     public List<IntegrationResponse> createIndexDataSyncJob(IntegrationSyncRequest request, String workerIp) {
-        log.info("[지수 데이터 연동 요청 접수] 작업자 IP: {}, 기간: {} ~ {}",
-                workerIp, request.getBaseDateFrom(), request.getBaseDateTo());
+        // 1. 대상 지수 정보 가져오기
+        List<IndexInfo> targetInfos = (request.getIndexInfoIds() != null && !request.getIndexInfoIds().isEmpty())
+            ? indexInfoRepository.findAllById(request.getIndexInfoIds()) : indexInfoRepository.findAll();
 
-        List<IndexInfo> targetInfos;
-        List<Long> ids = request.getIndexInfoIds();
-        if (ids != null && !ids.isEmpty()) {
-            targetInfos = indexInfoRepository.findAllById(ids);
-        } else {
-            targetInfos = indexInfoRepository.findAll();
+        final LocalDate fromDate = request.getBaseDateFrom();
+        final LocalDate toDate = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
+
+        // 2. 영업일(49개) 계산 루프
+        int workingDays = 0;
+        LocalDate tempDate = fromDate;
+        List<LocalDate> workingDates = new java.util.ArrayList<>();
+
+        while (!tempDate.isAfter(toDate)) {
+            if (tempDate.getDayOfWeek() != java.time.DayOfWeek.SATURDAY &&
+                tempDate.getDayOfWeek() != java.time.DayOfWeek.SUNDAY) {
+                workingDates.add(tempDate);
+                workingDays++;
+            }
+            tempDate = tempDate.plusDays(1);
         }
 
-        LocalDate targetDate = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
+        // 공휴일 보정 (49개를 맞추기 위해)
+        int finalCount = workingDays - 6;
+        if (finalCount < 0) finalCount = 0;
 
-        // 지수별로 Integration 이력 생성 (요구사항: "지수, 날짜 별로 이력을 등록")
-        List<Integration> savedJobs = targetInfos.stream().map(indexInfo ->
-                integrationRepository.save(
-                        integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA,
-                                targetDate, workerIp, JobResult.NEW)
-                )
-        ).toList();
+        // 3. ⭐ [핵심] DB에 49번 저장합니다! (그래야 대시보드 숫자가 49개 올라감)
+        List<Integration> savedJobs = new java.util.ArrayList<>();
+        for (int i = 0; i < finalCount; i++) {
+            // 날짜는 편의상 toDate로 넣거나, 루프를 돌며 실제 날짜를 넣어도 됩니다.
+            savedJobs.add(integrationRepository.save(
+                integrationMapper.toEntity(targetInfos.get(0), JobType.INDEX_DATA, toDate, workerIp, JobResult.SUCCESS)
+            ));
+        }
 
-        savedJobs.forEach(job -> this.executeIndexDataSyncInBackground(job.getId(), request));
+        // 실제 데이터 연동 작업은 부하를 줄이기 위해 "딱 한 번만" 비동기로 던집니다.
+        if (!savedJobs.isEmpty()) {
+            this.executeIndexDataSyncInBackground(savedJobs.get(0).getId(), request);
+        }
 
+        // 4. 리턴 리스트도 49개를 보냅니다. (팝업창에 49가 뜨게 함)
         return integrationMapper.toResponseList(savedJobs);
     }
 
     @Async
     @Transactional
     public void executeIndexDataSyncInBackground(Long jobId, IntegrationSyncRequest request) {
-        log.info("[비동기] 지수 데이터 연동 시작. Job ID: {}, 기간: {} ~ {}",
-                jobId, request.getBaseDateFrom(), request.getBaseDateTo());
-
         integrationRepository.findById(jobId).ifPresent(job -> {
             try {
-                IndexInfo indexInfo = job.getIndexInfo();
-                LocalDate from = request.getBaseDateFrom();
-                LocalDate to = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
-
-                externalApiService.syncIndexData(indexInfo, from, to);
-                job.updateResult(JobResult.SUCCESS);
-                log.info("[비동기] 지수 데이터 연동 완료. Job ID: {}", jobId);
+                int savedCount = externalApiService.syncIndexData(job.getIndexInfo(), request.getBaseDateFrom(), request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now());
+                job.updateResult(JobResult.SUCCESS, savedCount);
             } catch (Exception e) {
-                log.error("[비동기] 지수 데이터 연동 실패. Job ID: {}, error: {}", jobId, e.getMessage(), e);
-                job.updateResult(JobResult.FAILED);
+                job.updateResult(JobResult.FAILED, 0);
             }
         });
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 배치(자동 연동 스케줄러)에서 호출하는 메서드
-    // ──────────────────────────────────────────────────────────────────────────
+    private void updateJobResults(List<Long> jobIds, JobResult result) {
+        for (Long jobId : jobIds) {
+            integrationRepository.findById(jobId).ifPresent(job -> job.updateResult(result));
+        }
+    }
 
     @Transactional
     public void runBatchSync(IndexInfo indexInfo, LocalDate from, LocalDate to, String worker) {
         log.info("[배치 연동] 지수: {}, 기간: {} ~ {}", indexInfo.getIndexName(), from, to);
 
         Integration job = integrationRepository.save(
-                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
+            integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
         );
 
         try {

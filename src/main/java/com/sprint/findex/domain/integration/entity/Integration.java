@@ -42,7 +42,18 @@ public class Integration extends BaseEntity {
     @Column(name = "result", length = 20, nullable = false)
     private JobResult result;
 
+    // ⭐처리된 데이터 개수를 담을 필드입니다.
+    @Column(name = "processed_count")
+    private Integer processedCount;
+
+    // ⭐이제 성공/실패와 '개수'를 세트로 받습니다!
+    public void updateResult(JobResult result, Integer processedCount) {
+        this.result = result;
+        this.processedCount = processedCount;
+    }
+
     public void updateResult(JobResult result) {
         this.result = result;
+        this.processedCount = 0;
     }
 }

@@ -28,6 +28,7 @@ public class IntegrationMapper {
                 .worker(integration.getWorker())
                 .jobTime(integration.getJobTime())
                 .result(integration.getResult())
+                .processedCount(integration.getProcessedCount())   //⭐
                 .build();
     }
 
@@ -48,6 +49,7 @@ public class IntegrationMapper {
                 .worker(worker)
                 .jobTime(LocalDateTime.now())
                 .result(result)
+                .processedCount(0) // ⭐처음 생성할 때는 0으로 시작합니다.
                 .build();
     }
 }
