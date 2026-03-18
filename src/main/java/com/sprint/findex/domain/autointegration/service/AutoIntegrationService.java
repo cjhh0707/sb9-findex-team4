@@ -30,11 +30,11 @@ public class AutoIntegrationService {
   // 새로운 자동 연동 설정 생성
   public AutoIntegrationDto createAutoIntegration (Long indexInfoId) {
     IndexInfo indexInfo = indexInfoRepository.findById(indexInfoId)
-            .orElseThrow(() -> new IllegalArgumentException("IndexInfo not found"));
+        .orElseThrow(() -> new IllegalArgumentException("IndexInfo not found"));
     AutoIntegration setting = AutoIntegration.builder()
-            .indexInfo(indexInfo)
-            .enabled(false) // 기본값 비활성화
-            .build();
+        .indexInfo(indexInfo)
+        .enabled(false) // 기본값 비활성화
+        .build();
 
     AutoIntegration saved = autoIntegrationRepository.save(setting);
     return autoIntergrationMapper.toDto(saved);
@@ -43,19 +43,19 @@ public class AutoIntegrationService {
   // ID로 조회
   public AutoIntegrationDto getAutoIntegration(Long id) {
     AutoIntegration entity = autoIntegrationRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not for id"));
+        .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not for id"));
     return autoIntergrationMapper.toDto(entity);
   }
 
   // 대상 식별자 조회
   public CursorPageResponse<AutoIntegrationDto> getAutoSyncConfigs(
-          Long indexInfoId,
-          Boolean enabled,
-          Long idAfter,
-          String cursor, // 페이징 조회용
-          String sortField,
-          String sortDirection,
-          int size
+      Long indexInfoId,
+      Boolean enabled,
+      Long idAfter,
+      String cursor, // 페이징 조회용
+      String sortField,
+      String sortDirection,
+      int size
   ) {
 
     // cursor null 처리
@@ -67,10 +67,10 @@ public class AutoIntegrationService {
     Pageable pageable = PageRequest.of(0, size + 1);
 
     List<AutoIntegration> list = autoIntegrationRepository.search(
-            indexInfoId,
-            enabled,
-            idAfter,
-            pageable
+        indexInfoId,
+        enabled,
+        idAfter,
+        pageable
     );
 
     // hasNext 판단
@@ -78,9 +78,9 @@ public class AutoIntegrationService {
 
     // 실제 반환 데이터
     List<AutoIntegrationDto> content = list.stream()
-            .limit(size)
-            .map(autoIntergrationMapper::toDto)
-            .toList();
+        .limit(size)
+        .map(autoIntergrationMapper::toDto)
+        .toList();
 
     // ⭐ 수정: nextCursor 대신 nextIdAfter 변수를 선언하고 ID 값을 바로 담습니다.
     Long nextIdAfter = null;
@@ -90,12 +90,12 @@ public class AutoIntegrationService {
     }
 
     return new CursorPageResponse<>(
-            content,       // 1. content: DTO 리스트
-            null,          // 2. nextCursor: 문자열 커서 미사용
-            nextIdAfter,   // 3. nextIdAfter: 다음 조회를 위한 커서 ID (이제 정상 동작합니다!)
-            size,          // 4. size: 요청 페이지 크기
-            0L,          // 5. totalElements: 전체 요소 개수 생략
-            hasNext        // 6. hasNext: 다음 페이지 존재 여부
+        content,
+        nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
+        nextIdAfter,
+        size,
+        0L,
+        hasNext
     );
   }
 
@@ -104,7 +104,7 @@ public class AutoIntegrationService {
   @Transactional
   public AutoIntegrationDto updateEnabled(Long id, boolean enabled) {
     AutoIntegration setting = autoIntegrationRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
 
     setting.changeEnabled(enabled);
     return autoIntergrationMapper.toDto(setting);
@@ -113,7 +113,7 @@ public class AutoIntegrationService {
   // 마지막 동기화 날짜 업데이트
   public AutoIntegrationDto updateLastIntegrationDate(Long id, java.time.LocalDateTime lastSyncDate) {
     AutoIntegration setting = autoIntegrationRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
 
     setting.updateLastIntegrationAt(LocalDateTime.now());
     return autoIntergrationMapper.toDto(setting);

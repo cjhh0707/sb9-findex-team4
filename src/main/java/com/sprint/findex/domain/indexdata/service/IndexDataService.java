@@ -40,54 +40,17 @@ public class IndexDataService {
       Long indexInfoId, LocalDate startDate, LocalDate endDate,
       Long idAfter, String sortField, String sortDirection, int size) {
 
-    // ⭐ 1. [궁극의 해결책] 화면에 스크롤바가 생기지 않는 프론트엔드 버그를 우회하기 위해,
-    // 백엔드에서 강제로 한 번에 100개씩 넉넉하게 주도록 사이즈를 덮어씌웁니다!
-    size = 100;
+    // 1. 정렬 및 페이징 설정
+    Sort sort = sortDirection.equalsIgnoreCase("desc")
+        ? Sort.by(sortField).descending()
+        : Sort.by(sortField).ascending();
+    Pageable pageable = PageRequest.of(0, size, sort);
 
-    // 2. 방어 로직
-    if (idAfter == null) idAfter = 0L;
-    if (sortField == null || sortField.isBlank()) sortField = "baseDate";
-    String finalSortDirection = (sortDirection == null || sortDirection.isBlank()) ? "desc" : sortDirection;
+    // 2. DB 조회
+    Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, startDate, endDate, idAfter, pageable);
 
-    LocalDate finalStartDate = (startDate == null) ? LocalDate.of(2000, 1, 1) : startDate;
-    LocalDate finalEndDate = (endDate == null) ? LocalDate.of(2099, 12, 31) : endDate;
-
-    // 3. DB 전체 조회
-    List<IndexData> allData = indexDataRepository.findAll();
-
-    // 4. 필터링 및 정렬 (메모리에서 초고속 처리)
-    List<IndexData> filteredData = allData.stream()
-        .filter(d -> indexInfoId == null || indexInfoId == 0L || d.getIndexInfo().getId().equals(indexInfoId))
-        .filter(d -> d.getBaseDate().compareTo(finalStartDate) >= 0 && d.getBaseDate().compareTo(finalEndDate) <= 0)
-        .sorted((d1, d2) -> {
-          // ⭐ [안전장치] 날짜가 완전히 똑같은 데이터가 있을 경우, ID 순으로 정렬해서 순서가 꼬이는 걸 방지합니다.
-          int dateCompare = finalSortDirection.equalsIgnoreCase("desc") ?
-              d2.getBaseDate().compareTo(d1.getBaseDate()) :
-              d1.getBaseDate().compareTo(d2.getBaseDate());
-          return dateCompare != 0 ? dateCompare : d2.getId().compareTo(d1.getId());
-        })
-        .toList();
-
-    // 5. 페이지 사이즈(100개)만큼 자르기
-    java.util.List<IndexData> pagedData = new java.util.ArrayList<>();
-    boolean found = (idAfter == 0L);
-    boolean hasNext = false;
-
-    for (IndexData data : filteredData) {
-      if (!found) {
-        if (data.getId().equals(idAfter)) found = true;
-        continue;
-      }
-      if (pagedData.size() < size) {
-        pagedData.add(data);
-      } else {
-        hasNext = true;
-        break;
-      }
-    }
-
-    // 6. 응답 DTO 변환
-    List<IndexDataResponse> content = pagedData.stream()
+    // 3. BigDecimal을 Long/Double로 변환하고 null인 경우 0을 채워줍니다.
+    List<IndexDataResponse> content = result.getContent().stream()
         .map(data -> new IndexDataResponse(
             data.getId(),
             data.getIndexInfo().getId(),
@@ -105,10 +68,12 @@ public class IndexDataService {
         )).toList();
 
     Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
-    long totalCount = filteredData.size();
 
-    return new CursorPageResponse<>(content, null, nextIdAfter, size, totalCount, hasNext);
+    long totalElements = indexDataRepository.countIndexData(indexInfoId, startDate, endDate);
+
+    return new CursorPageResponse<>(content, nextIdAfter != null ? String.valueOf(nextIdAfter) : null, nextIdAfter, size, totalElements, result.hasNext());
   }
+
   public IndexDataResponse findById(Long id) {
     IndexData indexData = indexDataRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("해당 데이터를 찾을 수 없습니다. ID: " + id));

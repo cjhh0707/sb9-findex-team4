@@ -44,9 +44,9 @@ public class BasicDashboardService implements DashboardService {
         List<IndexData> pastDataList = indexDataRepository.findClosestPastByIndexInfoIdsAndTargetDate(idList, pastDate, pastDate.minusDays(30));
 
         Map<Long, IndexData> currentMap = currentDataList.stream()
-                .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
+            .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
         Map<Long, IndexData> pastMap = pastDataList.stream()
-                .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
+            .collect(Collectors.toMap(d -> d.getIndexInfo().getId(), d -> d));
 
         return favoriteList.stream().map(indexInfo -> {
             IndexData current = currentMap.get(indexInfo.getId());
@@ -61,17 +61,17 @@ public class BasicDashboardService implements DashboardService {
 
             if (pastPrice.compareTo(BigDecimal.ZERO) != 0) {
                 fluctuationRate = versus.divide(pastPrice, 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+                    .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
             }
 
             return new IndexPerformanceDto(
-                    indexInfo.getId(),
-                    indexInfo.getIndexClassification(),
-                    indexInfo.getIndexName(),
-                    versus,
-                    fluctuationRate,
-                    currentPrice,
-                    pastPrice
+                indexInfo.getId(),
+                indexInfo.getIndexClassification(),
+                indexInfo.getIndexName(),
+                versus,
+                fluctuationRate,
+                currentPrice,
+                pastPrice
             );
         }).filter(Objects::nonNull).toList();
     }
@@ -79,7 +79,7 @@ public class BasicDashboardService implements DashboardService {
     @Override
     public IndexChartDto getChart(Long indexInfoId, ChartPeriodType periodType) {
         IndexInfo indexInfo = indexInfoRepository.findById(indexInfoId)
-                .orElseThrow(() -> new NoSuchElementException("지수 정보를 찾을 수 없습니다."));
+            .orElseThrow(() -> new NoSuchElementException("지수 정보를 찾을 수 없습니다."));
 
         Optional<IndexData> latestOpt = indexDataRepository.findTopByIndexInfoIdOrderByBaseDateDesc(indexInfoId);
         if (latestOpt.isEmpty()) return null;
@@ -92,7 +92,7 @@ public class BasicDashboardService implements DashboardService {
         };
 
         List<IndexData> allData = indexDataRepository.findByIndexInfoIdAndBaseDateBetweenOrderByBaseDateAsc(
-                indexInfoId, startDate.minusDays(30), endDate);
+            indexInfoId, startDate.minusDays(30), endDate);
 
         List<ChartDataPoint> dataPoints = new ArrayList<>();
         List<ChartDataPoint> ma5DataPoints = new ArrayList<>();
@@ -116,21 +116,21 @@ public class BasicDashboardService implements DashboardService {
                 dataPoints.add(new ChartDataPoint(date, data.getClosingPrice()));
 
                 ma5DataPoints.add(new ChartDataPoint(date, i >= 4
-                        ? BigDecimal.valueOf(ma5Sum / 5).setScale(2, RoundingMode.HALF_UP) : null));
+                    ? BigDecimal.valueOf(ma5Sum / 5).setScale(2, RoundingMode.HALF_UP) : null));
 
                 ma20DataPoints.add(new ChartDataPoint(date, i >= 19
-                        ? BigDecimal.valueOf(ma20Sum / 20).setScale(2, RoundingMode.HALF_UP) : null));
+                    ? BigDecimal.valueOf(ma20Sum / 20).setScale(2, RoundingMode.HALF_UP) : null));
             }
         }
 
         return new IndexChartDto(
-                indexInfo.getId(),
-                indexInfo.getIndexClassification(),
-                indexInfo.getIndexName(),
-                periodType,
-                dataPoints,
-                ma5DataPoints,
-                ma20DataPoints
+            indexInfo.getId(),
+            indexInfo.getIndexClassification(),
+            indexInfo.getIndexName(),
+            periodType,
+            dataPoints,
+            ma5DataPoints,
+            ma20DataPoints
         );
     }
 
@@ -148,47 +148,47 @@ public class BasicDashboardService implements DashboardService {
         Comparator<IndexData> byDateDesc = Comparator.comparing(IndexData::getBaseDate).reversed();
 
         Map<Long, IndexData> currentMap = currentDataList.stream().collect(Collectors.toMap(
-                d -> d.getIndexInfo().getId(), d -> d, (a, b) -> byDateDesc.compare(a, b) <= 0 ? a : b));
+            d -> d.getIndexInfo().getId(), d -> d, (a, b) -> byDateDesc.compare(a, b) <= 0 ? a : b));
         Map<Long, IndexData> pastMap = pastDataList.stream().collect(Collectors.toMap(
-                d -> d.getIndexInfo().getId(), d -> d, (a, b) -> byDateDesc.compare(a, b) <= 0 ? a : b));
+            d -> d.getIndexInfo().getId(), d -> d, (a, b) -> byDateDesc.compare(a, b) <= 0 ? a : b));
 
         List<IndexPerformanceDto> performances = allIndexInfos.stream().map(info -> {
-                    IndexData current = currentMap.get(info.getId());
-                    IndexData past = pastMap.get(info.getId());
+                IndexData current = currentMap.get(info.getId());
+                IndexData past = pastMap.get(info.getId());
 
-                    if (current == null || past == null) return null;
+                if (current == null || past == null) return null;
 
-                    BigDecimal currentPrice = current.getClosingPrice();
-                    BigDecimal pastPrice = past.getClosingPrice();
-                    BigDecimal versus = currentPrice.subtract(pastPrice);
-                    BigDecimal fluctuationRate = BigDecimal.ZERO;
+                BigDecimal currentPrice = current.getClosingPrice();
+                BigDecimal pastPrice = past.getClosingPrice();
+                BigDecimal versus = currentPrice.subtract(pastPrice);
+                BigDecimal fluctuationRate = BigDecimal.ZERO;
 
-                    if (pastPrice.compareTo(BigDecimal.ZERO) != 0) {
-                        fluctuationRate = versus.divide(pastPrice, 4, RoundingMode.HALF_UP)
-                                .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
-                    }
+                if (pastPrice.compareTo(BigDecimal.ZERO) != 0) {
+                    fluctuationRate = versus.divide(pastPrice, 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+                }
 
-                    return new IndexPerformanceDto(
-                            info.getId(),
-                            info.getIndexClassification(),
-                            info.getIndexName(),
-                            versus,
-                            fluctuationRate,
-                            currentPrice,
-                            pastPrice
-                    );
-                }).filter(Objects::nonNull)
-                .sorted(Comparator.comparing(IndexPerformanceDto::fluctuationRate).reversed())
-                .toList();
+                return new IndexPerformanceDto(
+                    info.getId(),
+                    info.getIndexClassification(),
+                    info.getIndexName(),
+                    versus,
+                    fluctuationRate,
+                    currentPrice,
+                    pastPrice
+                );
+            }).filter(Objects::nonNull)
+            .sorted(Comparator.comparing(IndexPerformanceDto::fluctuationRate).reversed())
+            .toList();
 
         List<RankedIndexPerformanceDto> allRanked = IntStream.range(0, performances.size())
-                .mapToObj(i -> new RankedIndexPerformanceDto(performances.get(i), i + 1))
-                .toList();
+            .mapToObj(i -> new RankedIndexPerformanceDto(performances.get(i), i + 1))
+            .toList();
 
         if (indexInfoId != null) {
             return allRanked.stream()
-                    .filter(r -> r.performance().indexInfoId().equals(indexInfoId))
-                    .toList();
+                .filter(r -> r.performance().indexInfoId().equals(indexInfoId))
+                .toList();
         }
 
         return allRanked.stream().limit(limit).toList();

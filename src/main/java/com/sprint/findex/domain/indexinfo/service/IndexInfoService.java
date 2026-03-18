@@ -79,12 +79,13 @@ public class IndexInfoService {
 
   @Transactional(readOnly = true)
   public CursorPageResponse<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition, Long idAfter, int size) {
+
+    size = 500;
     String sortField = condition.sortField() != null ? condition.sortField() : "indexClassification";
     String sortDirection = condition.sortDirection() != null ? condition.sortDirection() : "asc";
 
-    Sort sort = sortDirection.equalsIgnoreCase("desc")
-        ? Sort.by(sortField).descending()
-        : Sort.by(sortField).ascending();
+    Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+    Sort sort = Sort.by(direction, sortField).and(Sort.by(Sort.Direction.ASC, "id"));
 
     Pageable pageable = PageRequest.of(0, size + 1, sort);
 
@@ -113,7 +114,7 @@ public class IndexInfoService {
 
     return new CursorPageResponse<>(
         content,
-        null,
+        nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
         nextIdAfter,
         size,
         totalElements,
