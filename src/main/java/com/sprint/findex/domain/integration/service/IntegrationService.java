@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -116,7 +117,7 @@ public class IntegrationService {
         List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
                 integrationRepository.save(
                         integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
-                                LocalDate.now(), workerIp, JobResult.NEW)
+                                LocalDate.now(), workerIp, JobResult.FAILED)
                 )
         ).toList();
 
@@ -174,19 +175,40 @@ public class IntegrationService {
             targetInfos = indexInfoRepository.findAll();
         }
 
-        LocalDate targetDate = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
+        LocalDate toDate = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
+        LocalDate fromDate = request.getBaseDateFrom() != null ? request.getBaseDateFrom() : toDate;
 
-        // 지수별로 Integration 이력 생성 (요구사항: "지수, 날짜 별로 이력을 등록")
-        List<Integration> savedJobs = targetInfos.stream().map(indexInfo ->
-                integrationRepository.save(
-                        integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA,
-                                targetDate, workerIp, JobResult.NEW)
-                )
-        ).toList();
+        List<Integration> allSavedJobs = new ArrayList<>();
 
-        savedJobs.forEach(job -> this.executeIndexDataSyncInBackground(job.getId(), request));
+        for (IndexInfo indexInfo : targetInfos) {
+            try {
+                // API 호출 → 실제 데이터가 있는 날짜 목록 반환
+                List<LocalDate> syncedDates = externalApiService.syncIndexData(indexInfo, fromDate, toDate);
 
-        return integrationMapper.toResponseList(savedJobs);
+                // 요구사항: "지수, 날짜 별로 이력을 등록" → 실제 거래일만큼 이력 생성
+                if (syncedDates.isEmpty()) {
+                    // 해당 기간에 데이터 없음 → FAILED 1건
+                    allSavedJobs.add(integrationRepository.save(
+                            integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, toDate, workerIp, JobResult.FAILED)
+                    ));
+                } else {
+                    for (LocalDate date : syncedDates) {
+                        allSavedJobs.add(integrationRepository.save(
+                                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, date, workerIp, JobResult.SUCCESS)
+                        ));
+                    }
+                }
+                log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 이력 건수: {}",
+                        indexInfo.getIndexName(), fromDate, toDate, syncedDates.size());
+            } catch (Exception e) {
+                log.error("[지수 데이터 연동 실패] 지수: {}, error: {}", indexInfo.getIndexName(), e.getMessage(), e);
+                allSavedJobs.add(integrationRepository.save(
+                        integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, toDate, workerIp, JobResult.FAILED)
+                ));
+            }
+        }
+
+        return integrationMapper.toResponseList(allSavedJobs);
     }
 
     @Async
@@ -220,7 +242,7 @@ public class IntegrationService {
         log.info("[배치 연동] 지수: {}, 기간: {} ~ {}", indexInfo.getIndexName(), from, to);
 
         Integration job = integrationRepository.save(
-                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.NEW)
+                integrationMapper.toEntity(indexInfo, JobType.INDEX_DATA, to, worker, JobResult.FAILED)
         );
 
         try {

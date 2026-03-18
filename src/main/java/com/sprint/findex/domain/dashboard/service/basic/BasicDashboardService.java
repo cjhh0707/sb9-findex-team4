@@ -32,8 +32,7 @@ public class BasicDashboardService implements DashboardService {
 
     @Override
     public List<IndexPerformanceDto> getFavoritePerformance(PeriodType periodType) {
-        // [수정 포인트] Repository 메서드 시그니처에 맞춰 true 매개변수 전달
-        List<IndexInfo> favoriteList = indexInfoRepository.findAllByFavoriteTrue(true);
+        List<IndexInfo> favoriteList = indexInfoRepository.findAllByFavoriteTrue();
 
         if (favoriteList.isEmpty()) return List.of();
 

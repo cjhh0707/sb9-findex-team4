@@ -105,7 +105,7 @@ public class ExternalApiService {
      * @return 처리된 데이터 수
      */
     @Transactional
-    public int syncIndexData(IndexInfo indexInfo, LocalDate from, LocalDate to) {
+    public List<LocalDate> syncIndexData(IndexInfo indexInfo, LocalDate from, LocalDate to) {
         List<OpenApiItem> items = fetchAllItems(
                 indexInfo.getIndexClassification(),
                 indexInfo.getIndexName(),
@@ -114,18 +114,21 @@ public class ExternalApiService {
 
         log.info("📢 [확인용] API 원본 수신 개수 (필터링 전): {}개", items.size());
 
-        int savedCount = 0; // 진짜로 내 지수에 맞는 데이터만 센다!
+        List<LocalDate> syncedDates = new ArrayList<>();
 
         for (OpenApiItem item : items) {
             if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())) {
                 upsertIndexData(indexInfo, item);
-                savedCount++; // 저장한 개수 1 증가
+                LocalDate baseDate = parseDatePlain(item.getBasDt());
+                if (baseDate != null) {
+                    syncedDates.add(baseDate);
+                }
             }
         }
 
-        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 찐 처리 건수: {}",
-                indexInfo.getIndexName(), from, to, savedCount);
-        return savedCount;
+        log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 처리 건수: {}",
+                indexInfo.getIndexName(), from, to, syncedDates.size());
+        return syncedDates;
     }
 
     // Private: upsert helpers

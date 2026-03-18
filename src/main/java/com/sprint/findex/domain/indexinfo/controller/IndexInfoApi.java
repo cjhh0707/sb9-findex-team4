@@ -33,7 +33,8 @@ public interface IndexInfoApi {
     ResponseEntity<CursorPageResponse<IndexInfoResponse>> getIndexInfoList(
             @ModelAttribute IndexInfoSearchCondition condition,
             @RequestParam(required = false) Long idAfter,
-            @RequestParam(defaultValue = "1000") int size
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int size
     );
 
     @Operation(summary = "지수 정보 요약 목록 조회", description = "지수 ID, 분류, 이름만 포함한 전체 지수 목록을 조회합니다.")

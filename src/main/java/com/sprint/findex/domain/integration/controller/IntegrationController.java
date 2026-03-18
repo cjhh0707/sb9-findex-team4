@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "연동 이력 (Integration)", description = "공공데이터 연동 및 이력 조회 API")
+@Tag(name = "연동 작업 API", description = "연동 작업 관리 API")
 @RestController
 @RequestMapping("/api/sync-jobs")
 @RequiredArgsConstructor

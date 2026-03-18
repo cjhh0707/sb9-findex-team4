@@ -1,6 +1,5 @@
 package com.sprint.findex.domain.indexdata.dto;
 
-import com.sprint.findex.common.type.SourceType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -10,7 +9,6 @@ import java.time.LocalDate;
 public record IndexDataCreateRequest(
         Long indexInfoId,               // 지수 정보 ID (매우 중요)
         LocalDate baseDate,             // 날짜
-        SourceType sourceType,          // 소스 타입
         BigDecimal marketPrice,        // 시가
         BigDecimal closingPrice,        // 종가
         BigDecimal highPrice,           // 고가

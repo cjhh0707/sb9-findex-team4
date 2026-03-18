@@ -72,9 +72,18 @@ public class IndexInfoService {
   }
 
   @Transactional(readOnly = true)
-  public CursorPageResponse<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition, Long idAfter, int size) {
+  public CursorPageResponse<IndexInfoResponse> getIndexInfoList(IndexInfoSearchCondition condition, Long idAfter, String cursor, int size) {
 
-    // 주의: 기존 코드에 있던 size = 500; 덮어쓰기 로직을 제거하여 컨트롤러에서 넘어온 size를 존중하도록 수정했습니다.
+    // cursor를 페이지 번호로 해석 (0부터 시작)
+    int pageNum = 0;
+    if (cursor != null && !cursor.isBlank()) {
+      try {
+        pageNum = Integer.parseInt(cursor);
+      } catch (NumberFormatException e) {
+        pageNum = 0;
+      }
+    }
+
     String sortField = condition.sortField() != null ? condition.sortField() : "indexClassification";
     String sortDirection = condition.sortDirection() != null ? condition.sortDirection() : "asc";
 
@@ -82,13 +91,12 @@ public class IndexInfoService {
     Sort sort = Sort.by(direction, sortField).and(Sort.by(Sort.Direction.ASC, "id"));
 
     // 다음 페이지 존재 여부를 확인하기 위해 size + 1만큼 조회
-    Pageable pageable = PageRequest.of(0, size + 1, sort);
+    Pageable pageable = PageRequest.of(pageNum, size + 1, sort);
 
     List<IndexInfo> indexInfos = indexInfoRepository.searchIndexInfos(
             condition.indexClassification(),
             condition.indexName(),
             condition.favorite(),
-            idAfter,
             pageable
     );
 
@@ -100,18 +108,19 @@ public class IndexInfoService {
             .map(indexInfoMapper::toResponse)
             .toList();
 
-    Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).id();
-
     long totalElements = indexInfoRepository.countIndexInfos(
             condition.indexClassification(),
             condition.indexName(),
             condition.favorite()
     );
 
+    // nextCursor = 다음 페이지 번호 (문자열)
+    String nextCursor = hasNext ? String.valueOf(pageNum + 1) : null;
+
     return new CursorPageResponse<>(
             content,
-            nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
-            nextIdAfter,
+            nextCursor,
+            null,
             size,
             totalElements,
             hasNext
@@ -127,7 +136,7 @@ public class IndexInfoService {
   @Transactional(readOnly = true)
   // 기존 List<IndexInfo> 반환 타입에서 내부 로직(toIndexInfoDto)에 맞춰 DTO 반환 타입으로 수정했습니다.
   public List<IndexInfoResponse> findAllByFavoriteTrue(Boolean favorite) {
-    List<IndexInfo> indexInfos = indexInfoRepository.findAllByFavoriteTrue(favorite);
+    List<IndexInfo> indexInfos = indexInfoRepository.findAllByFavoriteTrue();
     return indexInfos.stream()
             .map(indexInfoMapper::toResponse)
             .toList();
