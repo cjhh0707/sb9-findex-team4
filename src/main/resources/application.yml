@@ -2,13 +2,10 @@ spring:
   application:
     name: findex
 
-  config:
-     import: application-key.yml
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/findex
-    username: postgres
-    password: 1234
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/findex}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -32,6 +29,7 @@ spring:
 external:
   api:
     baseurl: https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService
+    apiKey: ${EXTERNAL_API_KEY:f5759f46d12642c4bb7abcef715f00852b122aff6470be85d69818f50be1074c}
 
 batch:
   sync:
