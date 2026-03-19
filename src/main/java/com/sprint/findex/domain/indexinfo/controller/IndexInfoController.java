@@ -40,8 +40,8 @@ public class IndexInfoController implements IndexInfoApi {
 
     @Override
     public ResponseEntity<CursorPageResponse<IndexInfoResponse>> getIndexInfoList(
-            IndexInfoSearchCondition condition, Long idAfter, int size) {
-        return ResponseEntity.ok(indexInfoService.getIndexInfoList(condition, idAfter, size));
+            IndexInfoSearchCondition condition, Long idAfter, String cursor, int size) {
+        return ResponseEntity.ok(indexInfoService.getIndexInfoList(condition, idAfter, cursor, size));
     }
 
     @Override

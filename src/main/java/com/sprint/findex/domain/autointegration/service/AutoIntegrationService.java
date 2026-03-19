@@ -115,7 +115,7 @@ public class AutoIntegrationService {
     AutoIntegration setting = autoIntegrationRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not found for id: " + id));
 
-    setting.updateLastIntegrationAt(LocalDateTime.now());
+    setting.updateLastIntegrationAt(lastSyncDate);
     return autoIntergrationMapper.toDto(setting);
   }
 

@@ -27,14 +27,14 @@ public class DashboardController {
 
     /** 즐겨찾기로 등록된 지수들의 성과를 조회합니다. (1번째 부분 - 주요 지수) */
     @GetMapping("/index-data/performance/favorite")
-    public List<IndexPerformanceDto> getFavPerformance(@RequestParam("periodType") PeriodType periodType) {
+    public List<IndexPerformanceDto> getFavPerformance(@RequestParam(value = "periodType", defaultValue = "DAILY") PeriodType periodType) {
         return basicDashboardService.getFavoritePerformance(periodType);
     }
 
     /** 지정된 지수 ID와 기간 유형에 해당하는 차트 데이터를 조회합니다. (2번째 부분 - 지수 차트) */
     @GetMapping("/index-data/{id}/chart")
     public IndexChartDto getChart(
-            @PathVariable("id") long id, @RequestParam("periodType") ChartPeriodType periodType) {
+            @PathVariable("id") long id, @RequestParam(value = "periodType", defaultValue = "MONTHLY") ChartPeriodType periodType) {
         return basicDashboardService.getChart(id, periodType);
     }
 
@@ -44,8 +44,8 @@ public class DashboardController {
     @GetMapping("/index-data/performance/rank")
     public List<RankedIndexPerformanceDto> getPerformanceRank(
             @RequestParam(name = "indexInfoId", required = false) Long indexInfoId,
-            @RequestParam("periodType") PeriodType periodType,
-            @RequestParam("limit") int limit) {
+            @RequestParam(value = "periodType", defaultValue = "DAILY") PeriodType periodType,
+            @RequestParam(defaultValue = "10") int limit) {
         return basicDashboardService.getPerformanceRank(indexInfoId, periodType, limit);
     }
 }
