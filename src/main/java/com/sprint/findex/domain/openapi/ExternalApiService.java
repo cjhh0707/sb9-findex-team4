@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 공공데이터포털 금융위원회 주가지수 OpenAPI 연동 서비스
@@ -80,15 +81,64 @@ public class ExternalApiService {
             return 0;
         }
 
-        // (분류명|지수명) 기준 중복 제거 — 더 최신 항목으로 덮어씀
+        // (분류명|지수명) 기준 중복 제거
         Map<String, OpenApiItem> uniqueMap = new LinkedHashMap<>();
         for (OpenApiItem item : items) {
             if (item.getIdxCsf() == null || item.getIdxNm() == null) continue;
             uniqueMap.put(item.getIdxCsf() + "|" + item.getIdxNm(), item);
         }
 
+        // 기존 IndexInfo 전체 로드 → Map 변환 (DB 쿼리 1번)
+        Map<String, IndexInfo> existingInfoMap = indexInfoRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        i -> i.getIndexClassification() + "|" + i.getIndexName(),
+                        i -> i
+                ));
+
+        // 기존 AutoIntegration의 indexInfo ID Set 로드 (DB 쿼리 1번)
+        Set<Long> existingAutoIds = autoIntegrationRepository.findAll().stream()
+                .map(a -> a.getIndexInfo().getId())
+                .collect(Collectors.toSet());
+
+        List<IndexInfo> toSave = new ArrayList<>();
+
         for (OpenApiItem item : uniqueMap.values()) {
-            upsertIndexInfo(item);
+            String key = item.getIdxCsf() + "|" + item.getIdxNm();
+            IndexInfo existing = existingInfoMap.get(key);
+            if (existing != null) {
+                existing.updateInfo(
+                        parseInteger(item.getEpyItmsCnt()),
+                        parseDateDotOrPlain(item.getBasPnt()),
+                        parseBigDecimal(item.getBasIdx())
+                );
+                toSave.add(existing);
+            } else {
+                toSave.add(IndexInfo.builder()
+                        .indexClassification(item.getIdxCsf())
+                        .indexName(item.getIdxNm())
+                        .employedItemsCount(parseInteger(item.getEpyItmsCnt()))
+                        .basePointInTime(parseDateDotOrPlain(item.getBasPnt()))
+                        .baseIndex(parseBigDecimal(item.getBasIdx()))
+                        .sourceType(SourceType.OPEN_API)
+                        .favorite(false)
+                        .build());
+            }
+        }
+
+        // 한 번에 저장 (DB 쿼리 1번)
+        List<IndexInfo> savedInfos = indexInfoRepository.saveAll(toSave);
+
+        // AutoIntegration 신규 생성 - 한 번에 저장 (DB 쿼리 1번)
+        List<AutoIntegration> autoToSave = savedInfos.stream()
+                .filter(info -> info.getId() != null && !existingAutoIds.contains(info.getId()))
+                .map(info -> AutoIntegration.builder()
+                        .indexInfo(info)
+                        .enabled(false)
+                        .build())
+                .collect(Collectors.toList());
+
+        if (!autoToSave.isEmpty()) {
+            autoIntegrationRepository.saveAll(autoToSave);
         }
 
         log.info("[지수 정보 연동 완료] 처리 지수 수: {}", uniqueMap.size());
@@ -112,104 +162,64 @@ public class ExternalApiService {
                 from, to
         );
 
-        log.info("📢 [확인용] API 원본 수신 개수 (필터링 전): {}개", items.size());
+        // 기존 데이터 한 번에 로드 → Map<날짜, IndexData> (DB 쿼리 1번)
+        Map<LocalDate, IndexData> existingDataMap = indexDataRepository
+                .findByIndexInfoIdAndBaseDateBetweenOrderByBaseDateAsc(indexInfo.getId(), from, to)
+                .stream()
+                .collect(Collectors.toMap(IndexData::getBaseDate, d -> d));
 
+        List<IndexData> toSave = new ArrayList<>();
         List<LocalDate> syncedDates = new ArrayList<>();
 
         for (OpenApiItem item : items) {
-            if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())
-                    && item.getIdxCsf() != null && item.getIdxCsf().equals(indexInfo.getIndexClassification())) {
-                upsertIndexData(indexInfo, item);
-                LocalDate baseDate = parseDatePlain(item.getBasDt());
-                if (baseDate != null) {
-                    syncedDates.add(baseDate);
-                }
+            if (item.getIdxNm() == null || !item.getIdxNm().equals(indexInfo.getIndexName())
+                    || item.getIdxCsf() == null || !item.getIdxCsf().equals(indexInfo.getIndexClassification())) {
+                continue;
             }
+
+            LocalDate baseDate = parseDatePlain(item.getBasDt());
+            if (baseDate == null) continue;
+
+            BigDecimal marketPrice     = parseBigDecimal(item.getMkp());
+            BigDecimal closingPrice    = parseBigDecimal(item.getClpr());
+            BigDecimal highPrice       = parseBigDecimal(item.getHipr());
+            BigDecimal lowPrice        = parseBigDecimal(item.getLopr());
+            BigDecimal versus          = parseBigDecimal(item.getVs());
+            BigDecimal fluctuationRate = parseBigDecimal(item.getFltRt());
+            Long tradingQuantity       = parseLong(item.getTrqu());
+            Long tradingPrice          = parseLong(item.getTrPrc());
+            Long marketTotalAmount     = parseLong(item.getLstgMrktTotAmt());
+
+            IndexData existing = existingDataMap.get(baseDate);
+            if (existing != null) {
+                existing.update(marketPrice, closingPrice, highPrice, lowPrice,
+                        versus, fluctuationRate, tradingQuantity, tradingPrice, marketTotalAmount);
+                toSave.add(existing);
+            } else {
+                toSave.add(IndexData.builder()
+                        .indexInfo(indexInfo)
+                        .baseDate(baseDate)
+                        .sourceType(SourceType.OPEN_API)
+                        .marketPrice(marketPrice)
+                        .closingPrice(closingPrice)
+                        .highPrice(highPrice)
+                        .lowPrice(lowPrice)
+                        .versus(versus)
+                        .fluctuationRate(fluctuationRate)
+                        .tradingQuantity(tradingQuantity)
+                        .tradingPrice(tradingPrice)
+                        .marketTotalAmount(marketTotalAmount)
+                        .build());
+            }
+            syncedDates.add(baseDate);
         }
+
+        // 한 번에 저장 (DB 쿼리 1번)
+        indexDataRepository.saveAll(toSave);
 
         log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 처리 건수: {}",
                 indexInfo.getIndexName(), from, to, syncedDates.size());
         return syncedDates;
-    }
-
-    // Private: upsert helpers
-    private void upsertIndexInfo(OpenApiItem item) {
-        Optional<IndexInfo> existing = indexInfoRepository
-                .findByIndexClassificationAndIndexName(item.getIdxCsf(), item.getIdxNm());
-
-        if (existing.isPresent()) {
-            // 수정 가능 필드만 업데이트 (채용종목수, 기준시점, 기준지수)
-            existing.get().updateInfo(
-                    parseInteger(item.getEpyItmsCnt()),
-                    parseDateDotOrPlain(item.getBasPnt()),
-                    parseBigDecimal(item.getBasIdx())
-            );
-        } else {
-            // 신규 등록
-            IndexInfo newInfo = IndexInfo.builder()
-                    .indexClassification(item.getIdxCsf())
-                    .indexName(item.getIdxNm())
-                    .employedItemsCount(parseInteger(item.getEpyItmsCnt()))
-                    .basePointInTime(parseDateDotOrPlain(item.getBasPnt()))
-                    .baseIndex(parseBigDecimal(item.getBasIdx()))
-                    .sourceType(SourceType.OPEN_API)
-                    .favorite(false)
-                    .build();
-            IndexInfo saved = indexInfoRepository.save(newInfo);
-
-            // AutoIntegration 비활성화 상태로 초기화
-            if (autoIntegrationRepository.findByIndexInfoId(saved.getId()).isEmpty()) {
-                autoIntegrationRepository.save(
-                        AutoIntegration.builder()
-                                .indexInfo(saved)
-                                .enabled(false)
-                                .build()
-                );
-            }
-        }
-    }
-
-    private void upsertIndexData(IndexInfo indexInfo, OpenApiItem item) {
-        LocalDate baseDate = parseDatePlain(item.getBasDt());
-        if (baseDate == null) return;
-
-        BigDecimal marketPrice      = parseBigDecimal(item.getMkp());
-        BigDecimal closingPrice     = parseBigDecimal(item.getClpr());
-        BigDecimal highPrice        = parseBigDecimal(item.getHipr());
-        BigDecimal lowPrice         = parseBigDecimal(item.getLopr());
-        BigDecimal versus           = parseBigDecimal(item.getVs());
-        BigDecimal fluctuationRate  = parseBigDecimal(item.getFltRt());
-        Long tradingQuantity        = parseLong(item.getTrqu());
-        Long tradingPrice           = parseLong(item.getTrPrc());
-        Long marketTotalAmount      = parseLong(item.getLstgMrktTotAmt());
-
-        Optional<IndexData> existing = indexDataRepository
-                .findByIndexInfoIdAndBaseDate(indexInfo.getId(), baseDate);
-
-        if (existing.isPresent()) {
-            existing.get().update(
-                    marketPrice, closingPrice, highPrice, lowPrice,
-                    versus, fluctuationRate,
-                    tradingQuantity, tradingPrice, marketTotalAmount
-            );
-        } else {
-            indexDataRepository.save(
-                    IndexData.builder()
-                            .indexInfo(indexInfo)
-                            .baseDate(baseDate)
-                            .sourceType(SourceType.OPEN_API)
-                            .marketPrice(marketPrice)
-                            .closingPrice(closingPrice)
-                            .highPrice(highPrice)
-                            .lowPrice(lowPrice)
-                            .versus(versus)
-                            .fluctuationRate(fluctuationRate)
-                            .tradingQuantity(tradingQuantity)
-                            .tradingPrice(tradingPrice)
-                            .marketTotalAmount(marketTotalAmount)
-                            .build()
-            );
-        }
     }
 
     // Private: API 호출 및 페이징
