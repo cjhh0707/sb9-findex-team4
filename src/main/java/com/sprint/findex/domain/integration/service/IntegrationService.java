@@ -111,51 +111,26 @@ public class IntegrationService {
     public List<IntegrationResponse> createIndexInfoSyncJob(String workerIp) {
         log.info("[지수 정보 연동 요청 접수] 작업자 IP: {}", workerIp);
 
-        List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
+        JobResult result = JobResult.FAILED;
+        try {
+            externalApiService.syncIndexInfo();
+            result = JobResult.SUCCESS;
+        } catch (Exception e) {
+            log.error("[지수 정보 연동 실패] error: {}", e.getMessage());
+        }
 
-        // 지수별 이력 생성 (요구사항: "대상 지수가 여러 개인 경우 지수 별로 이력을 등록")
+        // 실제로 DB에 저장된 IndexInfo 기반으로 이력 생성
+        List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
+        JobResult finalResult = result;
         List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
                 integrationRepository.save(
                         integrationMapper.toEntity(indexInfo, JobType.INDEX_INFO,
-                                LocalDate.now(), workerIp, JobResult.FAILED)
+                                LocalDate.now(), workerIp, finalResult)
                 )
         ).toList();
 
-        // syncIndexInfo()는 단 한 번만 실행 (DB가 비어 있어도 실행)
-        List<Long> jobIds = savedJobs.stream().map(Integration::getId).toList();
-        this.executeOpenApiSyncInBackground(jobIds);
-
+        log.info("[지수 정보 연동 완료] 처리 건수: {}, 결과: {}", savedJobs.size(), finalResult);
         return integrationMapper.toResponseList(savedJobs);
-    }
-
-    @Async
-    @Transactional
-    public void executeOpenApiSyncInBackground(List<Long> jobIds) {
-        log.info("[비동기] 지수 정보 연동 시작. Job 수: {}", jobIds.size());
-
-        try {
-            // ⭐ [핵심 추가] 공공데이터 API 서버에 과부하를 주지 않기 위해
-            // 0.5초 정도 쉬었다가 시작하는 매너를 보여줍니다. (429 에러 방지)
-            Thread.sleep(500);
-
-            externalApiService.syncIndexInfo();
-
-            // 성공 시 로그에 처리된 결과 개수를 남겨주면 디버깅이 훨씬 편해요!
-            log.info("[비동기] 지수 정보 연동 완료. 대상 ID들: {}", jobIds);
-            updateJobResults(jobIds, JobResult.SUCCESS);
-
-        } catch (Exception e) {
-            log.error("[비동기] 지수 정보 연동 실패. error: {}", e.getMessage());
-            updateJobResults(jobIds, JobResult.FAILED);
-        }
-    }
-
-    // ⭐ 중복 코드를 줄이기 위한 헬퍼 메서드
-    private void updateJobResults(List<Long> jobIds, JobResult result) {
-        for (Long jobId : jobIds) {
-            integrationRepository.findById(jobId)
-                    .ifPresent(job -> job.updateResult(result));
-        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

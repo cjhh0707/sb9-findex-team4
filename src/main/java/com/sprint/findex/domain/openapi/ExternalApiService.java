@@ -117,7 +117,8 @@ public class ExternalApiService {
         List<LocalDate> syncedDates = new ArrayList<>();
 
         for (OpenApiItem item : items) {
-            if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())) {
+            if (item.getIdxNm() != null && item.getIdxNm().equals(indexInfo.getIndexName())
+                    && item.getIdxCsf() != null && item.getIdxCsf().equals(indexInfo.getIndexClassification())) {
                 upsertIndexData(indexInfo, item);
                 LocalDate baseDate = parseDatePlain(item.getBasDt());
                 if (baseDate != null) {

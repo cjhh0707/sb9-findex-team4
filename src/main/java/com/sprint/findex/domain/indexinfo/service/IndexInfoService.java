@@ -90,8 +90,13 @@ public class IndexInfoService {
     Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
     Sort sort = Sort.by(direction, sortField).and(Sort.by(Sort.Direction.ASC, "id"));
 
-    // 다음 페이지 존재 여부를 확인하기 위해 size + 1만큼 조회
-    Pageable pageable = PageRequest.of(pageNum, size + 1, sort);
+    long totalElements = indexInfoRepository.countIndexInfos(
+            condition.indexClassification(),
+            condition.indexName(),
+            condition.favorite()
+    );
+
+    Pageable pageable = PageRequest.of(pageNum, size, sort);
 
     List<IndexInfo> indexInfos = indexInfoRepository.searchIndexInfos(
             condition.indexClassification(),
@@ -100,19 +105,12 @@ public class IndexInfoService {
             pageable
     );
 
-    boolean hasNext = indexInfos.size() > size;
-
     // Mapper를 활용한 리스트 변환
     List<IndexInfoResponse> content = indexInfos.stream()
-            .limit(size)
             .map(indexInfoMapper::toResponse)
             .toList();
 
-    long totalElements = indexInfoRepository.countIndexInfos(
-            condition.indexClassification(),
-            condition.indexName(),
-            condition.favorite()
-    );
+    boolean hasNext = (long) (pageNum + 1) * size < totalElements;
 
     // nextCursor = 다음 페이지 번호 (문자열)
     String nextCursor = hasNext ? String.valueOf(pageNum + 1) : null;
