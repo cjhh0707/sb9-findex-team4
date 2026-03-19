@@ -267,6 +267,12 @@ public class ExternalApiService {
         urlBuilder.append("&pageNo=").append(pageNo);
         urlBuilder.append("&beginBasDt=").append(from.format(YYYYMMDD));
         urlBuilder.append("&endBasDt=").append(to.format(YYYYMMDD));
+        if (idxCsf != null && !idxCsf.isBlank()) {
+            urlBuilder.append("&idxCsf=").append(URLEncoder.encode(idxCsf, StandardCharsets.UTF_8));
+        }
+        if (idxNm != null && !idxNm.isBlank()) {
+            urlBuilder.append("&idxNm=").append(URLEncoder.encode(idxNm, StandardCharsets.UTF_8));
+        }
 
         URI uri = URI.create(urlBuilder.toString());
         log.debug("[OpenAPI] 인코딩된 키로 조립한 URI: {}", uri);

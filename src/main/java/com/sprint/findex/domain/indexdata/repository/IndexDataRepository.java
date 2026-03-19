@@ -21,7 +21,7 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
    * 페이징 방식: Slice와 id < :idAfter 조건을 활용하여 성능이 최적화된 No-offset 방식 구현
    * 정렬: ID 내림차순(DESC) 정렬을 통해 가장 최신 데이터부터 순차적으로 커서 페이징 처리
    */
-  @Query("SELECT i FROM IndexData i " +
+  @Query("SELECT i FROM IndexData i JOIN FETCH i.indexInfo " +
           "WHERE (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
           "AND (cast(:startDate as localdate) IS NULL OR i.baseDate >= :startDate) " +
           "AND (cast(:endDate as localdate) IS NULL OR i.baseDate <= :endDate) " +
@@ -37,10 +37,10 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
    * [CSV Export] 필터링은 동일하지만 페이징 없이 전체 리스트 조회
    * 기획서 사양: "페이지네이션은 고려하지 않습니다."
    */
-  @Query("SELECT i FROM IndexData i " +
+  @Query("SELECT i FROM IndexData i JOIN FETCH i.indexInfo " +
           "WHERE (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
           "AND (:startDate IS NULL OR i.baseDate >= :startDate) " +
-          "AND (:endDate IS NULL OR i.baseDate <= :endDate) ") // ORDER BY i.id DESC 삭제! Sort 파라미터가 알아서 해줍니다.
+          "AND (:endDate IS NULL OR i.baseDate <= :endDate) ")
   List<IndexData> findAllForExport(
           @Param("indexInfoId") Long indexInfoId,
           @Param("startDate") LocalDate startDate,

@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS integration
     CONSTRAINT fk_integration_index_info FOREIGN KEY (index_info_id) REFERENCES index_info (id) ON DELETE CASCADE
     );
 
+-- 성능 인덱스
+CREATE INDEX IF NOT EXISTS idx_index_data_index_info_id ON index_data(index_info_id);
+CREATE INDEX IF NOT EXISTS idx_index_data_base_date ON index_data(base_date);
+CREATE INDEX IF NOT EXISTS idx_index_data_info_date ON index_data(index_info_id, base_date);
+CREATE INDEX IF NOT EXISTS idx_index_info_name ON index_info(index_name);
+CREATE INDEX IF NOT EXISTS idx_index_info_classification ON index_info(index_classification_name);
+CREATE INDEX IF NOT EXISTS idx_integration_index_info_id ON integration(index_info_id);
+CREATE INDEX IF NOT EXISTS idx_integration_job_time ON integration(job_time);
+CREATE INDEX IF NOT EXISTS idx_auto_integration_index_info_id ON auto_integration(index_info_id);
+
 -- 4. 자동 연동 설정 (auto_integration)
 CREATE TABLE IF NOT EXISTS auto_integration
 (
