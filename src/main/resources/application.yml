@@ -42,8 +42,10 @@ logging:
   level:
     org.hibernate: INFO
 
+#server:
+#  forward-headers-strategy: framework
 server:
-  forward-headers-strategy: framework
+  port: ${PORT:8080}
 
 springdoc:
   swagger-ui:
