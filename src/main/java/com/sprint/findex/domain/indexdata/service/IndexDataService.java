@@ -74,12 +74,6 @@ public class IndexDataService {
     return new CursorPageResponse<>(content, nextIdAfter != null ? String.valueOf(nextIdAfter) : null, nextIdAfter, size, totalElements, result.hasNext());
   }
 
-  public IndexDataResponse findById(Long id) {
-    IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 데이터를 찾을 수 없습니다. ID: " + id));
-    return indexDataMapper.toResponse(indexData);
-  }
-
   @Transactional
   public IndexDataResponse update(Long id, IndexDataUpdateRequest request) {
     IndexData indexData = indexDataRepository.findById(id)

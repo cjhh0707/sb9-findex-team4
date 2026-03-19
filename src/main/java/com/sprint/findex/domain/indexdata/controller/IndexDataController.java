@@ -30,14 +30,14 @@ public class IndexDataController {
   @Operation(summary = "지수 데이터 목록 조회", description = "검색 조건에 따른 지수 데이터를 커서 기반 페이징으로 조회합니다.")
   @GetMapping
   public ResponseEntity<CursorPageResponse<IndexDataResponse>> search(
-      @RequestParam(name = "indexInfoId", required = false) Long indexInfoId,
-      @RequestParam(required = false) LocalDate startDate,
-      @RequestParam(required = false) LocalDate endDate,
-      @RequestParam(name = "idAfter", required = false) Long idAfter,
-      @RequestParam(required = false) String cursor,
-      @RequestParam(defaultValue = "baseDate") String sortField,
-      @RequestParam(defaultValue = "desc") String sortDirection,
-      @RequestParam(defaultValue = "1000") int size) {
+          @RequestParam(name = "indexInfoId", required = false) Long indexInfoId,
+          @RequestParam(required = false) LocalDate startDate,
+          @RequestParam(required = false) LocalDate endDate,
+          @RequestParam(name = "idAfter", required = false) Long idAfter,
+          @RequestParam(required = false) String cursor,
+          @RequestParam(defaultValue = "baseDate") String sortField,
+          @RequestParam(defaultValue = "desc") String sortDirection,
+          @RequestParam(defaultValue = "1000") int size) {
 
     // [수정 부분] cursor와 idAfter 중 있는 값을 안전하게 선택
     Long finalIdAfter = idAfter;
@@ -50,16 +50,10 @@ public class IndexDataController {
     }
 
     CursorPageResponse<IndexDataResponse> response = indexDataService.search(
-        indexInfoId, startDate, endDate, finalIdAfter, sortField, sortDirection, size);
+            indexInfoId, startDate, endDate, finalIdAfter, sortField, sortDirection, size);
 
     return ResponseEntity.ok(response);
   }
-  @Operation(summary = "지수 데이터 상세 조회", description = "특정 ID의 지수 데이터를 조회합니다.")
-  @GetMapping("/{id}")
-  public ResponseEntity<IndexDataResponse> findById(@PathVariable Long id) {
-    return ResponseEntity.ok(indexDataService.findById(id));
-  }
-
   @Operation(summary = "지수 데이터 수정", description = "특정 ID의 지수 데이터를 수정합니다.")
   @PatchMapping("/{id}")
   public ResponseEntity<IndexDataResponse> update(
