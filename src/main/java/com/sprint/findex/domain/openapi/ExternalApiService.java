@@ -36,7 +36,7 @@ import java.util.Optional;
 public class ExternalApiService {
 
     private static final String STOCK_INDEX_ENDPOINT = "/getStockMarketIndex";
-    private static final int NUM_OF_ROWS = 100;
+    private static final int NUM_OF_ROWS = 1000;
     private static final DateTimeFormatter YYYYMMDD = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final RestClient restClient;
@@ -72,7 +72,7 @@ public class ExternalApiService {
     @Transactional
     public int syncIndexInfo() {
         LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(30);
+        LocalDate startDate = endDate.minusDays(5);
 
         List<OpenApiItem> items = fetchAllItems(null, null, startDate, endDate);
         if (items.isEmpty()) {
