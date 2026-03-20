@@ -3,7 +3,6 @@ package com.sprint.findex.domain.indexdata.mapper;
 import com.sprint.findex.common.type.SourceType;
 import com.sprint.findex.domain.indexdata.dto.IndexDataCreateRequest;
 import com.sprint.findex.domain.indexdata.dto.IndexDataResponse;
-import com.sprint.findex.domain.indexdata.dto.IndexDataListResponse;
 import com.sprint.findex.domain.indexdata.dto.IndexDataUpdateRequest;
 import com.sprint.findex.domain.indexdata.entity.IndexData;
 import com.sprint.findex.domain.indexinfo.entity.IndexInfo;
