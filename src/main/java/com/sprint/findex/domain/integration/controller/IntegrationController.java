@@ -35,7 +35,6 @@ public class IntegrationController {
     public ResponseEntity<List<IntegrationResponse>> syncIndexInfos(HttpServletRequest httpRequest) {
         String workerIp = getClientIp(httpRequest);
 
-        // 서비스에 작업 접수를 지시하고, 생성된 'NEW' 상태의 이력 리스트를 받습니다.
         List<IntegrationResponse> response = integrationService.createIndexInfoSyncJob(workerIp);
         return ResponseEntity.status(202).body(response);
     }
@@ -48,13 +47,12 @@ public class IntegrationController {
 
         String workerIp = getClientIp(httpRequest);
 
-        // 작업(NEW)을 먼저 생성하여 반환하고 비동기 실행하도록 서비스 메서드 변경
         List<IntegrationResponse> response = integrationService.createIndexDataSyncJob(request, workerIp);
 
         return ResponseEntity.status(202).body(response);
     }
 
-    // IP 추출 로직 (유지)
+    // 클라이언트 IP 추출
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {

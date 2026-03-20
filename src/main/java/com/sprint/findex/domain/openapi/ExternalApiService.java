@@ -29,9 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * 공공데이터포털 금융위원회 주가지수 OpenAPI 연동 서비스
- */
+// 금융위원회 주가지수 OpenAPI 연동 서비스
 @Slf4j
 @Service
 public class ExternalApiService {
@@ -64,12 +62,7 @@ public class ExternalApiService {
         this.autoIntegrationRepository = autoIntegrationRepository;
     }
 
-    /**
-     * 지수 정보 연동
-     * 최근 30일 데이터를 조회해 (분류명+지수명) 기준으로 IndexInfo를 upsert한다.
-     *
-     * @return 처리된 지수 수
-     */
+    // 지수 정보 연동: 최근 5일 데이터 기준으로 IndexInfo upsert
     @Transactional
     public int syncIndexInfo() {
         LocalDate endDate = LocalDate.now();
@@ -88,14 +81,12 @@ public class ExternalApiService {
             uniqueMap.put(item.getIdxCsf() + "|" + item.getIdxNm(), item);
         }
 
-        // 기존 IndexInfo 전체 로드 → Map 변환 (DB 쿼리 1번)
         Map<String, IndexInfo> existingInfoMap = indexInfoRepository.findAll().stream()
                 .collect(Collectors.toMap(
                         i -> i.getIndexClassification() + "|" + i.getIndexName(),
                         i -> i
                 ));
 
-        // 기존 AutoIntegration의 indexInfo ID Set 로드 (DB 쿼리 1번)
         Set<Long> existingAutoIds = autoIntegrationRepository.findAll().stream()
                 .map(a -> a.getIndexInfo().getId())
                 .collect(Collectors.toSet());
@@ -125,10 +116,8 @@ public class ExternalApiService {
             }
         }
 
-        // 한 번에 저장 (DB 쿼리 1번)
         List<IndexInfo> savedInfos = indexInfoRepository.saveAll(toSave);
 
-        // AutoIntegration 신규 생성 - 한 번에 저장 (DB 쿼리 1번)
         List<AutoIntegration> autoToSave = savedInfos.stream()
                 .filter(info -> info.getId() != null && !existingAutoIds.contains(info.getId()))
                 .map(info -> AutoIntegration.builder()
@@ -145,15 +134,7 @@ public class ExternalApiService {
         return uniqueMap.size();
     }
 
-    /**
-     * 지수 데이터 연동
-     * 특정 IndexInfo와 날짜 범위에 해당하는 IndexData를 upsert한다.
-     *
-     * @param indexInfo 대상 지수 정보
-     * @param from      시작 일자
-     * @param to        종료 일자
-     * @return 처리된 데이터 수
-     */
+    // 지수 데이터 연동: 특정 지수/기간의 IndexData upsert
     @Transactional
     public List<LocalDate> syncIndexData(IndexInfo indexInfo, LocalDate from, LocalDate to) {
         List<OpenApiItem> items = fetchAllItems(
@@ -162,7 +143,6 @@ public class ExternalApiService {
                 from, to
         );
 
-        // 기존 데이터 한 번에 로드 → Map<날짜, IndexData> (DB 쿼리 1번)
         Map<LocalDate, IndexData> existingDataMap = indexDataRepository
                 .findByIndexInfoIdAndBaseDateBetweenOrderByBaseDateAsc(indexInfo.getId(), from, to)
                 .stream()
@@ -214,7 +194,6 @@ public class ExternalApiService {
             syncedDates.add(baseDate);
         }
 
-        // 한 번에 저장 (DB 쿼리 1번)
         indexDataRepository.saveAll(toSave);
 
         log.info("[지수 데이터 연동 완료] 지수: {}, 기간: {} ~ {}, 처리 건수: {}",

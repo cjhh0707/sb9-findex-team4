@@ -40,16 +40,14 @@ public class IndexDataService {
           Long indexInfoId, LocalDate startDate, LocalDate endDate,
           Long idAfter, String sortField, String sortDirection, int size) {
 
-    // 1. 정렬 및 페이징 설정
     Sort sort = sortDirection.equalsIgnoreCase("desc")
             ? Sort.by(sortField).descending()
             : Sort.by(sortField).ascending();
     Pageable pageable = PageRequest.of(0, size, sort);
 
-    // 2. DB 조회
     Slice<IndexData> result = indexDataRepository.searchIndexData(indexInfoId, startDate, endDate, idAfter, pageable);
 
-    // 3. BigDecimal을 Long/Double로 변환하고 null인 경우 0을 채워줍니다.
+    // null 필드 기본값 처리
     List<IndexDataResponse> content = result.getContent().stream()
             .map(data -> new IndexDataResponse(
                     data.getId(),

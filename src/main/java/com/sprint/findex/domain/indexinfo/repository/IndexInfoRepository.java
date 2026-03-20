@@ -33,13 +33,13 @@ public interface IndexInfoRepository extends JpaRepository<IndexInfo, Long> {
           @Param("favorite") Boolean favorite
   );
 
-  /**지수 분류명과 지수명으로 중복 여부를 확인하는 기본 제공 메서드(등록 시 유효성 검사용)*/
+  // 중복 여부 확인 (등록 시 유효성 검사)
   boolean existsByIndexClassificationAndIndexName(String indexClassification, String indexName);
 
-  //대시보드(관심 지수 성과 조회)를 위한 추가 메서드
+  // 즐겨찾기 지수 조회 (대시보드용)
   List<IndexInfo> findAllByFavoriteTrue();
 
-  // OpenAPI 연동: 분류명 + 지수명으로 단건 조회
+  // 분류명 + 지수명으로 단건 조회
   Optional<IndexInfo> findByIndexClassificationAndIndexName(String indexClassification, String indexName);
 
 }

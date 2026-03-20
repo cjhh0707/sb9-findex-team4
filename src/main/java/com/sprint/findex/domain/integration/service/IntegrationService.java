@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +33,6 @@ public class IntegrationService {
     private final IntegrationMapper integrationMapper;
     private final IndexInfoRepository indexInfoRepository;
     private final ExternalApiService externalApiService;
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 연동 작업 목록 조회
-    // ──────────────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public CursorPageResponse<IntegrationResponse> getIntegrations(IntegrationSearchCondition condition) {
@@ -80,7 +75,6 @@ public class IntegrationService {
 
         Long nextIdAfter = content.isEmpty() ? null : content.get(content.size() - 1).getId();
 
-        // ⭐ [수정 핵심] 상단 통계 수치를 위해 실제 데이터 개수를 카운트합니다.
         long totalElements = integrationRepository.countIntegrations(
                 condition.getJobType(),
                 condition.getIndexInfoId(),
@@ -92,7 +86,6 @@ public class IntegrationService {
                 jobResult
         );
 
-        // 0L 대신 totalElements를 넘겨줘야 화면 상단 숫자가 올라갑니다!
         return new CursorPageResponse<>(
                 content,
                 nextIdAfter != null ? String.valueOf(nextIdAfter) : null,
@@ -102,10 +95,6 @@ public class IntegrationService {
                 hasNext
         );
     }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 지수 정보 연동
-    // ──────────────────────────────────────────────────────────────────────────
 
     @Transactional
     public List<IntegrationResponse> createIndexInfoSyncJob(String workerIp) {
@@ -119,7 +108,6 @@ public class IntegrationService {
             log.error("[지수 정보 연동 실패] error: {}", e.getMessage());
         }
 
-        // 실제로 DB에 저장된 IndexInfo 기반으로 이력 생성
         List<IndexInfo> allIndexInfos = indexInfoRepository.findAll();
         JobResult finalResult = result;
         List<Integration> savedJobs = allIndexInfos.stream().map(indexInfo ->
@@ -132,10 +120,6 @@ public class IntegrationService {
         log.info("[지수 정보 연동 완료] 처리 건수: {}, 결과: {}", savedJobs.size(), finalResult);
         return integrationMapper.toResponseList(savedJobs);
     }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 지수 데이터 연동
-    // ──────────────────────────────────────────────────────────────────────────
 
     @Transactional
     public List<IntegrationResponse> createIndexDataSyncJob(IntegrationSyncRequest request, String workerIp) {
@@ -157,10 +141,8 @@ public class IntegrationService {
 
         for (IndexInfo indexInfo : targetInfos) {
             try {
-                // API 호출 → 실제 데이터가 있는 날짜 목록 반환
                 List<LocalDate> syncedDates = externalApiService.syncIndexData(indexInfo, fromDate, toDate);
 
-                // 요구사항: "지수, 날짜 별로 이력을 등록" → 실제 거래일만큼 이력 생성
                 if (syncedDates.isEmpty()) {
                     // 해당 기간에 데이터 없음 → FAILED 1건
                     allSavedJobs.add(integrationRepository.save(
@@ -185,32 +167,6 @@ public class IntegrationService {
 
         return integrationMapper.toResponseList(allSavedJobs);
     }
-
-    @Async
-    @Transactional
-    public void executeIndexDataSyncInBackground(Long jobId, IntegrationSyncRequest request) {
-        log.info("[비동기] 지수 데이터 연동 시작. Job ID: {}, 기간: {} ~ {}",
-                jobId, request.getBaseDateFrom(), request.getBaseDateTo());
-
-        integrationRepository.findById(jobId).ifPresent(job -> {
-            try {
-                IndexInfo indexInfo = job.getIndexInfo();
-                LocalDate from = request.getBaseDateFrom();
-                LocalDate to = request.getBaseDateTo() != null ? request.getBaseDateTo() : LocalDate.now();
-
-                externalApiService.syncIndexData(indexInfo, from, to);
-                job.updateResult(JobResult.SUCCESS);
-                log.info("[비동기] 지수 데이터 연동 완료. Job ID: {}", jobId);
-            } catch (Exception e) {
-                log.error("[비동기] 지수 데이터 연동 실패. Job ID: {}, error: {}", jobId, e.getMessage(), e);
-                job.updateResult(JobResult.FAILED);
-            }
-        });
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 배치(자동 연동 스케줄러)에서 호출하는 메서드
-    // ──────────────────────────────────────────────────────────────────────────
 
     @Transactional
     public void runBatchSync(IndexInfo indexInfo, LocalDate from, LocalDate to, String worker) {

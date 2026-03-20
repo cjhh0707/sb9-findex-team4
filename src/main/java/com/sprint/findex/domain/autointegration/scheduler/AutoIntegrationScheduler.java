@@ -26,8 +26,7 @@ public class AutoIntegrationScheduler {
     private final IntegrationService integrationService;
     private final IntegrationRepository integrationRepository;
 
-    //  자동 연동 배치 작업 -> 이전 작업 끝날시 설정된 시간 뒤에 다시 실행
-    //  값은 yml 에서 주입
+    // 자동 연동 배치 작업 (지연 시간은 yml에서 주입)
     @Scheduled(fixedDelayString = "${batch.sync.enabled-index-data.fixed-delay}")
     public void runAutoIntegration() {
         List<AutoIntegration> targets =

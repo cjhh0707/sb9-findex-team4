@@ -19,7 +19,6 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-// ⭐ [추가] 클래스 레벨에 readOnly 트랜잭션을 걸어주면 모든 조회 메서드에서 에러가 안 납니다!
 @Transactional
 public class AutoIntegrationService {
 
@@ -33,26 +32,19 @@ public class AutoIntegrationService {
             .orElseThrow(() -> new IllegalArgumentException("IndexInfo not found"));
     AutoIntegration setting = AutoIntegration.builder()
             .indexInfo(indexInfo)
-            .enabled(false) // 기본값 비활성화
+            .enabled(false)
             .build();
 
     AutoIntegration saved = autoIntegrationRepository.save(setting);
     return autoIntergrationMapper.toDto(saved);
   }
 
-  // ID로 조회
-  public AutoIntegrationDto getAutoIntegration(Long id) {
-    AutoIntegration entity = autoIntegrationRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("AutoIntegration not for id"));
-    return autoIntergrationMapper.toDto(entity);
-  }
-
-  // 대상 식별자 조회
+  // 목록 조회
   public CursorPageResponse<AutoIntegrationDto> getAutoSyncConfigs(
           Long indexInfoId,
           Boolean enabled,
           Long idAfter,
-          String cursor, // 페이징 조회용
+          String cursor,
           String sortField,
           String sortDirection,
           int size
@@ -63,7 +55,6 @@ public class AutoIntegrationService {
       idAfter = Long.parseLong(cursor);
     }
 
-    // size + 1 조회 후 다음 페이지 확인 (정렬은 repository 쿼리의 ORDER BY a.id ASC 사용)
     Pageable pageable = PageRequest.of(0, size + 1);
 
     List<AutoIntegration> list = autoIntegrationRepository.search(
@@ -73,20 +64,16 @@ public class AutoIntegrationService {
             pageable
     );
 
-    // hasNext 판단
     boolean hasNext = list.size() > size;
 
-    // 실제 반환 데이터
     List<AutoIntegrationDto> content = list.stream()
             .limit(size)
             .map(autoIntergrationMapper::toDto)
             .toList();
 
-    // ⭐ 수정: nextCursor 대신 nextIdAfter 변수를 선언하고 ID 값을 바로 담습니다.
     Long nextIdAfter = null;
     if (hasNext && !content.isEmpty()) {
-      AutoIntegrationDto last = content.get(content.size() - 1);
-      nextIdAfter = last.id(); // DTO의 id() 메서드를 통해 Long 타입 ID를 가져옵니다.
+      nextIdAfter = content.get(content.size() - 1).id();
     }
 
     return new CursorPageResponse<>(
@@ -100,7 +87,6 @@ public class AutoIntegrationService {
   }
 
   // 활성화 상태 업데이트
-  // ⭐ [핵심 추가] 이 어노테이션이 있어야 스위치 변경 사항이 DB에 진짜로 저장됩니다!
   @Transactional
   public AutoIntegrationDto updateEnabled(Long id, boolean enabled) {
     AutoIntegration setting = autoIntegrationRepository.findById(id)

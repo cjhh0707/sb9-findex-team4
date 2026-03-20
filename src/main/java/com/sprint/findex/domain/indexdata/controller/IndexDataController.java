@@ -39,13 +39,13 @@ public class IndexDataController {
           @RequestParam(defaultValue = "desc") String sortDirection,
           @RequestParam(defaultValue = "1000") int size) {
 
-    // [수정 부분] cursor와 idAfter 중 있는 값을 안전하게 선택
+    // cursor가 있으면 idAfter로 사용
     Long finalIdAfter = idAfter;
     if (cursor != null && !cursor.isBlank()) {
       try {
         finalIdAfter = Long.parseLong(cursor);
       } catch (NumberFormatException e) {
-        finalIdAfter = idAfter; // 숫자가 아니면 idAfter 값 유지
+        finalIdAfter = idAfter;
       }
     }
 

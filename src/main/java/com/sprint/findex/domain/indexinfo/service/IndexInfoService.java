@@ -20,7 +20,7 @@ public class IndexInfoService {
 
   private final IndexInfoRepository indexInfoRepository;
   private final AutoIntegrationService autoIntegrationService;
-  private final IndexInfoMapper indexInfoMapper; // Mapper 의존성 추가
+  private final IndexInfoMapper indexInfoMapper;
 
   @Transactional
   public IndexInfoResponse createIndexInfo(IndexInfoCreateRequest request) {
@@ -30,7 +30,7 @@ public class IndexInfoService {
       throw new IllegalArgumentException("이미 등록된 지수 분류명과 지수명 조합입니다.");
     }
 
-    // 2. DTO -> Entity (Mapper 활용으로 코드가 대폭 감소했습니다)
+    // 2. Entity 변환 및 저장
     IndexInfo indexInfo = indexInfoMapper.toEntity(request);
     IndexInfo savedIndexInfo = indexInfoRepository.save(indexInfo);
 
@@ -53,7 +53,6 @@ public class IndexInfoService {
     IndexInfo indexInfo = indexInfoRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("해당 지수 정보를 찾을 수 없습니다. ID: " + id));
 
-    // Entity 내부의 비즈니스 메서드를 통해 상태 변경
     indexInfo.updateInfo(
             request.employedItemsCount(),
             request.basePointInTime(),
@@ -105,14 +104,12 @@ public class IndexInfoService {
             pageable
     );
 
-    // Mapper를 활용한 리스트 변환
     List<IndexInfoResponse> content = indexInfos.stream()
             .map(indexInfoMapper::toResponse)
             .toList();
 
     boolean hasNext = (long) (pageNum + 1) * size < totalElements;
 
-    // nextCursor = 다음 페이지 번호 (문자열)
     String nextCursor = hasNext ? String.valueOf(pageNum + 1) : null;
 
     return new CursorPageResponse<>(
@@ -127,16 +124,6 @@ public class IndexInfoService {
 
   @Transactional(readOnly = true)
   public List<IndexInfoSummaryDto> getIndexInfoSummaries() {
-    // Mapper의 List 변환 메서드를 사용하여 불필요한 Stream 생성을 줄였습니다.
     return indexInfoMapper.toSummaryDtoList(indexInfoRepository.findAll());
-  }
-
-  @Transactional(readOnly = true)
-  // 기존 List<IndexInfo> 반환 타입에서 내부 로직(toIndexInfoDto)에 맞춰 DTO 반환 타입으로 수정했습니다.
-  public List<IndexInfoResponse> findAllByFavoriteTrue(Boolean favorite) {
-    List<IndexInfo> indexInfos = indexInfoRepository.findAllByFavoriteTrue();
-    return indexInfos.stream()
-            .map(indexInfoMapper::toResponse)
-            .toList();
   }
 }
