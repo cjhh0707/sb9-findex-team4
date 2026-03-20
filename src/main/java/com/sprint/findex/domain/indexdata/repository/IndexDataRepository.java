@@ -40,7 +40,7 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
   @Query("SELECT i FROM IndexData i JOIN FETCH i.indexInfo " +
           "WHERE (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
           "AND (:startDate IS NULL OR i.baseDate >= :startDate) " +
-          "AND (:endDate IS NULL OR i.baseDate <= :endDate) ")
+          "AND (:endDate IS NULL OR i.baseDate <= :endDate) ") // ORDER BY i.id DESC 삭제! Sort 파라미터가 알아서 해줍니다.
   List<IndexData> findAllForExport(
           @Param("indexInfoId") Long indexInfoId,
           @Param("startDate") LocalDate startDate,
@@ -67,13 +67,13 @@ public interface IndexDataRepository extends JpaRepository<IndexData, Long> {
   List<IndexData> findByIndexInfoIdAndBaseDateBetweenOrderByBaseDateAsc(Long indexInfoId, LocalDate start, LocalDate end);
 
   // 지수 ID 리스트를 받아, 각 지수별로 maxDate 이하의 '가장 최신 날짜' 데이터를 가져오는 쿼리
-  @Query("SELECT d FROM IndexData d WHERE d.baseDate = " +
+  @Query("SELECT d FROM IndexData d JOIN FETCH d.indexInfo WHERE d.baseDate = " +
           "(SELECT MAX(d2.baseDate) FROM IndexData d2 WHERE d2.indexInfo.id = d.indexInfo.id AND d2.baseDate <= :maxDate) " +
           "AND d.indexInfo.id IN :idList")
   List<IndexData> findMostRecentByIndexInfoIdsAndMaxDate(@Param("idList") List<Long> idList, @Param("maxDate") LocalDate maxDate);
 
   // 지수 ID 리스트를 받아, 각 지수별로 targetDate 이하, limitDate 이상인 '가장 최신 날짜(가장 가까운 과거)' 데이터를 가져오는 쿼리
-  @Query("SELECT d FROM IndexData d WHERE d.baseDate = " +
+  @Query("SELECT d FROM IndexData d JOIN FETCH d.indexInfo WHERE d.baseDate = " +
           "(SELECT MAX(d2.baseDate) FROM IndexData d2 WHERE d2.indexInfo.id = d.indexInfo.id AND d2.baseDate <= :targetDate AND d2.baseDate >= :limitDate) " +
           "AND d.indexInfo.id IN :idList")
   List<IndexData> findClosestPastByIndexInfoIdsAndTargetDate(@Param("idList") List<Long> idList, @Param("targetDate") LocalDate targetDate, @Param("limitDate") LocalDate limitDate);

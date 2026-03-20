@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface IntegrationRepository extends JpaRepository<Integration, Long> {
 
     // QueryDSL을 대체하는 순수 JPQL 동적 쿼리
-    @Query("SELECT i FROM Integration i " +
+    @Query("SELECT i FROM Integration i JOIN FETCH i.indexInfo " +
             "WHERE (:idAfter IS NULL OR i.id < :idAfter) " +
             "AND (:jobType IS NULL OR i.jobType = :jobType) " +
             "AND (:indexInfoId IS NULL OR i.indexInfo.id = :indexInfoId) " +
