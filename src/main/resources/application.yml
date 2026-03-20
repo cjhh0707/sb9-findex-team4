@@ -2,14 +2,19 @@ spring:
   application:
     name: findex
 
-  config:
-    import: application-key.yml
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/findex
-    username: postgres
-    password: password
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/findex}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      keepalive-time: 60000
+      connection-test-query: SELECT 1
 
   jpa:
     hibernate:
@@ -18,7 +23,11 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
 
   task:
     scheduling:
@@ -27,20 +36,23 @@ spring:
 external:
   api:
     baseurl: https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService
+    apiKey: ${EXTERNAL_API_KEY:f5759f46d12642c4bb7abcef715f00852b122aff6470be85d69818f50be1074c}
 
 batch:
   sync:
     info:
-      fixed-delay: P1D
+      fixed-delay: 86400000
     enabled-index-data:
-      fixed-delay: P1D
+      fixed-delay: 86400000
 
 logging:
   level:
     org.hibernate: INFO
 
+#server:
+#  forward-headers-strategy: framework
 server:
-  forward-headers-strategy: framework
+  port: ${PORT:8080}
 
 springdoc:
   swagger-ui:
