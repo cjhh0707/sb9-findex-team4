@@ -23,6 +23,7 @@ public interface AutoIntegrationRepository extends JpaRepository<AutoIntegration
   @Query("""
 SELECT a
 FROM AutoIntegration a
+JOIN FETCH a.indexInfo
 WHERE (:indexInfoId IS NULL OR a.indexInfo.id = :indexInfoId)
 AND (:enabled IS NULL OR a.enabled = :enabled)
 AND (:idAfter IS NULL OR a.id > :idAfter)
